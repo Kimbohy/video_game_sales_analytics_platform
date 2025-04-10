@@ -1,6 +1,7 @@
 import { VideoGame } from "../../api/gameService";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
+import { GameDetailsModal } from "../modals/GameDetailsModal";
 
 interface GamesListProps {
   games: VideoGame[];
@@ -26,17 +27,18 @@ export const GamesList = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("global_Sales");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [selectedGame, setSelectedGame] = useState<VideoGame | null>(null);
   const gamesPerPage = 12;
 
   // Filter and sort games
   const filteredAndSortedGames = useMemo(() => {
     let result = [...games];
-    
+
     // Apply search filter
     if (search) {
       const searchLower = search.toLowerCase();
       result = result.filter(
-        game =>
+        (game) =>
           game.name.toLowerCase().includes(searchLower) ||
           game.platform.toLowerCase().includes(searchLower) ||
           game.genre.toLowerCase().includes(searchLower) ||
@@ -88,7 +90,7 @@ export const GamesList = ({
         if (i - l === 2) {
           rangeWithDots.push(l + 1);
         } else if (i - l !== 1) {
-          rangeWithDots.push('...');
+          rangeWithDots.push("...");
         }
       }
       rangeWithDots.push(i);
@@ -109,7 +111,13 @@ export const GamesList = ({
 
   if (!year || !games.length) return null;
 
-  const SortButton = ({ field, label }: { field: SortField; label: string }) => (
+  const SortButton = ({
+    field,
+    label,
+  }: {
+    field: SortField;
+    label: string;
+  }) => (
     <button
       onClick={() => handleSort(field)}
       className={`text-sm font-medium ${
@@ -120,164 +128,178 @@ export const GamesList = ({
     >
       {label}
       {sortField === field && (
-        <span className="ml-1">
-          {sortOrder === "asc" ? "↑" : "↓"}
-        </span>
+        <span className="ml-1">{sortOrder === "asc" ? "↑" : "↓"}</span>
       )}
     </button>
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="col-span-1 md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6"
-    >
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Games Released in {year}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Showing {currentGames.length} of {filteredAndSortedGames.length} games
-          </p>
-        </div>
-
-        {/* Search and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search games..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="col-span-1 p-6 bg-white rounded-lg shadow-lg md:col-span-2 dark:bg-gray-800"
+      >
+        <div className="mb-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Games Released in {year}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Showing {currentGames.length} of {filteredAndSortedGames.length}{" "}
+              games
+            </p>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Sort by:</span>
-            <div className="flex gap-4">
-              <SortButton field="name" label="Name" />
-              <SortButton field="global_Sales" label="Sales" />
-              <SortButton field="platform" label="Platform" />
-              <SortButton field="genre" label="Genre" />
+
+          {/* Search and Sort Controls */}
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search games..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Sort by:</span>
+              <div className="flex gap-4">
+                <SortButton field="name" label="Name" />
+                <SortButton field="global_Sales" label="Sales" />
+                <SortButton field="platform" label="Platform" />
+                <SortButton field="genre" label="Genre" />
+              </div>
             </div>
           </div>
+
+          {/* Active Filters */}
+          {(selectedPlatform || selectedGenre || search) && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Active filters:
+              </span>
+              {selectedPlatform && (
+                <span className="px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded dark:bg-indigo-900 dark:text-indigo-200">
+                  Platform: {selectedPlatform}
+                </span>
+              )}
+              {selectedGenre && (
+                <span className="px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded dark:bg-indigo-900 dark:text-indigo-200">
+                  Genre: {selectedGenre}
+                </span>
+              )}
+              {search && (
+                <span className="px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded dark:bg-indigo-900 dark:text-indigo-200">
+                  Search: "{search}"
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Active Filters */}
-        {(selectedPlatform || selectedGenre || search) && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Active filters:
-            </span>
-            {selectedPlatform && (
-              <span className="px-2 py-1 text-sm rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-                Platform: {selectedPlatform}
-              </span>
+        {/* Updated Games Grid with clickable cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {currentGames.map((game) => (
+            <motion.div
+              key={`${game.name}-${game.platform}`}
+              className="p-4 transition-all rounded-lg bg-gray-50 dark:bg-gray-700 cursor-pointer hover:shadow-md hover:scale-[1.02]"
+              whileHover={{ y: -4 }}
+              onClick={() => setSelectedGame(game)}
+            >
+              <div className="flex flex-col h-full">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  {game.name}
+                </h3>
+                <div className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPlatformClick(game.platform);
+                    }}
+                    className={`inline-block px-2 py-1 rounded ${
+                      selectedPlatform === game.platform
+                        ? "bg-indigo-600 text-white"
+                        : "hover:bg-indigo-100 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    {game.platform}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGenreClick(game.genre);
+                    }}
+                    className={`inline-block px-2 py-1 rounded ml-2 ${
+                      selectedGenre === game.genre
+                        ? "bg-indigo-600 text-white"
+                        : "hover:bg-indigo-100 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    {game.genre}
+                  </button>
+                  <p>Publisher: {game.publisher}</p>
+                </div>
+                <div className="pt-2 mt-auto">
+                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">
+                    {game.global_Sales}M Global Sales
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Improved Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-gray-700 bg-gray-100 rounded dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            {getPageNumbers().map((page, index) =>
+              typeof page === "number" ? (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === page
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {page}
+                </button>
+              ) : (
+                <span key={index} className="px-2 text-gray-500">
+                  {page}
+                </span>
+              )
             )}
-            {selectedGenre && (
-              <span className="px-2 py-1 text-sm rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-                Genre: {selectedGenre}
-              </span>
-            )}
-            {search && (
-              <span className="px-2 py-1 text-sm rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-                Search: "{search}"
-              </span>
-            )}
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-gray-700 bg-gray-100 rounded dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      {/* Games Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {currentGames.map((game) => (
-          <div
-            key={`${game.name}-${game.platform}`}
-            className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-shadow hover:shadow-md"
-          >
-            <div className="flex flex-col h-full">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                {game.name}
-              </h3>
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <button
-                  onClick={() => onPlatformClick(game.platform)}
-                  className={`inline-block px-2 py-1 rounded ${
-                    selectedPlatform === game.platform
-                      ? "bg-indigo-600 text-white"
-                      : "hover:bg-indigo-100 dark:hover:bg-gray-600"
-                  }`}
-                >
-                  {game.platform}
-                </button>
-                <button
-                  onClick={() => onGenreClick(game.genre)}
-                  className={`inline-block px-2 py-1 rounded ml-2 ${
-                    selectedGenre === game.genre
-                      ? "bg-indigo-600 text-white"
-                      : "hover:bg-indigo-100 dark:hover:bg-gray-600"
-                  }`}
-                >
-                  {game.genre}
-                </button>
-                <p>Publisher: {game.publisher}</p>
-              </div>
-              <div className="mt-auto pt-2">
-                <p className="font-semibold text-indigo-600 dark:text-indigo-400">
-                  {game.global_Sales}M Global Sales
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Improved Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-          >
-            Previous
-          </button>
-          
-          {getPageNumbers().map((page, index) => (
-            typeof page === 'number' ? (
-              <button
-                key={index}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded ${
-                  currentPage === page
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {page}
-              </button>
-            ) : (
-              <span key={index} className="px-2 text-gray-500">
-                {page}
-              </span>
-            )
-          ))}
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
-    </motion.div>
+      <GameDetailsModal
+        game={selectedGame}
+        onClose={() => setSelectedGame(null)}
+      />
+    </>
   );
 };

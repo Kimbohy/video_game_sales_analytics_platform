@@ -20,9 +20,9 @@ export interface VideoGame {
   year: number;
   genre: string;
   publisher: string;
-  na_Sales: number;
-  eu_Sales: number;
-  jp_Sales: number;
+  nA_Sales: number;
+  eU_Sales: number;
+  jP_Sales: number;
   other_Sales: number;
   global_Sales: number;
 }
