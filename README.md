@@ -44,7 +44,8 @@ Data source: [Video Games Sales dataset on Kaggle](https://www.kaggle.com/datase
 ### Database Setup
 
 1. Ensure MySQL Server is running
-2. Import the video games sales data:
+2. Change the import.sql file to match the path of your csv file
+3. Import the video games sales data:
 
 ```bash
 mysql -u your_username -p your_database < import.sql
@@ -109,7 +110,7 @@ The frontend will be available at `http://localhost:5173`
 ## Project Structure
 
 ```
-├── back/                  # Backend .NET application
+├── back/                 # Backend .NET application
 │   ├── Models/           # Data models
 │   ├── Services/         # Business logic and database services
 │   └── Properties/       # Application configuration
