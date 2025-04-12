@@ -1,4 +1,9 @@
 using back.Services;
+using DotEnv.Core;
+
+new EnvLoader()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .Load();
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "XDNYT5NugnA=",
+  "dgSpecHash": "fCtPRfK4Zrw=",
   "success": true,
   "projectFilePath": "/home/kim/code/sql/project/archive/back/back.csproj",
   "expectedPackageFiles": [
     "/home/kim/.nuget/packages/bouncycastle.cryptography/2.3.1/bouncycastle.cryptography.2.3.1.nupkg.sha512",
     "/home/kim/.nuget/packages/dapper/2.1.66/dapper.2.1.66.nupkg.sha512",
+    "/home/kim/.nuget/packages/dotenv.core/3.1.0/dotenv.core.3.1.0.nupkg.sha512",
     "/home/kim/.nuget/packages/google.protobuf/3.26.1/google.protobuf.3.26.1.nupkg.sha512",
     "/home/kim/.nuget/packages/k4os.compression.lz4/1.3.8/k4os.compression.lz4.1.3.8.nupkg.sha512",
     "/home/kim/.nuget/packages/k4os.compression.lz4.streams/1.3.8/k4os.compression.lz4.streams.1.3.8.nupkg.sha512",

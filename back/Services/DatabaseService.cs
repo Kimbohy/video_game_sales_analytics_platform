@@ -10,8 +10,16 @@ public class DatabaseService
 
     public DatabaseService(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? 
+        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? 
             throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            
+        // Replace environment variable placeholders with actual values
+        _connectionString = connectionString
+            .Replace("${SQL_SERVER}", Environment.GetEnvironmentVariable("SQL_SERVER") ?? "")
+            .Replace("${SQL_DATABASE}", Environment.GetEnvironmentVariable("SQL_DATABASE") ?? "")
+            .Replace("${SQL_LOGIN}", Environment.GetEnvironmentVariable("SQL_LOGIN") ?? "")
+            .Replace("${SQL_PASSWORD}", Environment.GetEnvironmentVariable("SQL_PASSWORD") ?? "")
+            .Replace("${SQL_ALLOW_LOCAL_INFILE}", Environment.GetEnvironmentVariable("SQL_ALLOW_LOCAL_INFILE") ?? "");
     }
 
     public async Task<IEnumerable<VideoGame>> GetTopSellingGamesAsync(int limit = 10)

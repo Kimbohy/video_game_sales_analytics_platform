@@ -52,3 +52,5 @@
 /home/kim/code/sql/project/archive/back/obj/Debug/net9.0/back.pdb
 /home/kim/code/sql/project/archive/back/obj/Debug/net9.0/back.genruntimeconfig.cache
 /home/kim/code/sql/project/archive/back/obj/Debug/net9.0/ref/back.dll
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/DotEnv.Core.dll
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/es/DotEnv.Core.resources.dll
