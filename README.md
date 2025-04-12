@@ -121,11 +121,3 @@ The frontend will be available at `http://localhost:5173`
 │   └── public/          # Static assets
 └── import.sql           # Database import script
 ```
-
-## License
-
-[Add your chosen license here]
-
-## Contributing
-
-[Add contribution guidelines here]
