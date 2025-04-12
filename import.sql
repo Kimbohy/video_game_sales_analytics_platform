@@ -27,7 +27,7 @@ CREATE TABLE video_games_sales (
 SET GLOBAL local_infile = 1;
 
 -- Load data from CSV file
-LOAD DATA LOCAL INFILE '/home/kim/code/sql/project/archive/video_games_sales.csv'
+LOAD DATA LOCAL INFILE '/home/kim/code/sql/project/archive/video_games_sales.csv' --cahange this path to your local file path
 INTO TABLE video_games_sales
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
