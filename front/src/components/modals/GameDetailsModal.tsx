@@ -1,23 +1,48 @@
 import { VideoGame } from "../../api/gameService";
 import { motion, AnimatePresence } from "framer-motion";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface GameDetailsModalProps {
   game: VideoGame | null;
   onClose: () => void;
 }
 
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300"];
+
 export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
   if (!game) return null;
 
   const totalSales = game.global_Sales;
   const salesData = [
-    { region: "North America", sales: game.nA_Sales, color: "bg-blue-500" },
-    { region: "Europe", sales: game.eU_Sales, color: "bg-green-500" },
-    { region: "Japan", sales: game.jP_Sales, color: "bg-red-500" },
-    { region: "Other", sales: game.other_Sales, color: "bg-yellow-500" },
-  ];
+    { region: "North America", sales: game.nA_Sales, color: COLORS[0] },
+    { region: "Europe", sales: game.eU_Sales, color: COLORS[1] },
+    { region: "Japan", sales: game.jP_Sales, color: COLORS[2] },
+    { region: "Other", sales: game.other_Sales, color: COLORS[3] },
+  ].sort((a, b) => b.sales - a.sales);
 
-  // Define animation variants for different elements
+  const pieChartData = salesData.map((item) => ({
+    name: item.region,
+    value: item.sales,
+  }));
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {data.name}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            {data.value.toFixed(2)}M (
+            {((data.value / totalSales) * 100).toFixed(1)}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const backdropVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
@@ -60,50 +85,6 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
         duration: 0.5,
       },
     }),
-    exit: (i: number) => ({
-      opacity: 0,
-      x: i % 2 === 0 ? 100 : -100,
-      transition: {
-        delay: i * 0.05,
-        duration: 0.2,
-      },
-    }),
-  };
-
-  const salesChartVariants = {
-    hidden: { opacity: 0, x: -50 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: 0.6,
-        duration: 0.5,
-      },
-    },
-    exit: {
-      opacity: 0,
-      x: 50,
-      transition: {
-        duration: 0.2,
-      },
-    },
-  };
-
-  const barVariants = {
-    hidden: { width: 0 },
-    visible: (percent: number) => ({
-      width: `${percent}%`,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut",
-      },
-    }),
-    exit: {
-      width: 0,
-      transition: {
-        duration: 0.2,
-      },
-    },
   };
 
   return (
@@ -124,7 +105,7 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
           animate="visible"
           exit="exit"
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-2xl overflow-hidden bg-white shadow-2xl dark:bg-gray-800 rounded-2xl perspective-1000"
+          className="w-full max-w-2xl overflow-hidden bg-white shadow-2xl dark:bg-gray-800 rounded-2xl"
         >
           {/* Header with gradient */}
           <motion.div
@@ -193,7 +174,7 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
               custom={5}
               className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
             >
-              <div className="mb-1 text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 Publisher
               </div>
               <div className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -201,47 +182,87 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
               </div>
             </motion.div>
 
-            {/* Sales Chart */}
-            <motion.div variants={salesChartVariants} className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Sales Distribution
-              </h3>
-              <div className="space-y-3">
-                {salesData.map((data, index) => (
-                  <motion.div
-                    key={data.region}
-                    variants={contentVariants}
-                    custom={index + 6}
-                    className="space-y-1"
-                  >
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-300">
-                        {data.region}
-                      </span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {data.sales}M
-                      </span>
+            {/* Sales Distribution */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Sales Chart */}
+              <motion.div
+                variants={contentVariants}
+                custom={6}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+              >
+                <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                  Regional Distribution
+                </h3>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={80}
+                      >
+                        {pieChartData.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </motion.div>
+
+              {/* Sales Breakdown */}
+              <motion.div
+                variants={contentVariants}
+                custom={7}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+              >
+                <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                  Sales Breakdown
+                </h3>
+                <div className="space-y-3">
+                  {salesData.map((data, index) => (
+                    <div key={data.region} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-300">
+                          {data.region}
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {data.sales.toFixed(2)}M
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${(data.sales / totalSales) * 100}%`,
+                          }}
+                          transition={{ duration: 0.8, delay: index * 0.1 }}
+                          className="h-full"
+                          style={{ backgroundColor: data.color }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
-                      <motion.div
-                        variants={barVariants}
-                        custom={(data.sales / totalSales) * 100}
-                        className={`h-full ${data.color}`}
-                      />
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
 
             {/* Global Sales Summary */}
             <motion.div
               variants={contentVariants}
-              custom={10}
+              custom={8}
               className="p-6 text-white bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl"
             >
               <div className="text-lg opacity-90">Total Global Sales</div>
-              <div className="text-4xl font-bold">{game.global_Sales}M</div>
+              <div className="text-4xl font-bold">{totalSales.toFixed(2)}M</div>
             </motion.div>
           </div>
         </motion.div>

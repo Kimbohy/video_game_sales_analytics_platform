@@ -13,7 +13,7 @@ export const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   // Get filtered data based on current filters
-  const { data: filteredData } = useQuery({
+  const { data: filteredData, isLoading: isFilteredDataLoading } = useQuery({
     queryKey: ["filteredData", selectedPlatform, selectedGenre, selectedYear],
     queryFn: () =>
       gameService.getFilteredData({
@@ -24,7 +24,7 @@ export const Dashboard = () => {
   });
 
   // Get filtered games based on all filters
-  const { data: filteredGames } = useQuery({
+  const { data: filteredGames, isLoading: isGamesLoading } = useQuery({
     queryKey: ["filteredGames", selectedPlatform, selectedGenre, selectedYear],
     queryFn: () =>
       gameService.getFilteredGames({
@@ -32,7 +32,7 @@ export const Dashboard = () => {
         genre: selectedGenre || undefined,
         year: selectedYear || undefined,
       }),
-    enabled: !!selectedYear, // Only fetch when a year is selected
+    enabled: !!selectedYear,
   });
 
   const handleReset = () => {
@@ -41,13 +41,67 @@ export const Dashboard = () => {
     setSelectedYear(null);
   };
 
+  if (isFilteredDataLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading analytics data...
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (
+    !filteredData ||
+    (!filteredData.timelineData.length && !filteredData.platformSales.length)
+  ) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="p-8 text-center bg-white rounded-lg shadow-lg dark:bg-gray-800">
+          <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+            No Data Available
+          </h2>
+          <p className="mb-6 text-gray-600 dark:text-gray-300">
+            There is no data available for the selected filters.
+          </p>
+          {(selectedPlatform || selectedGenre || selectedYear) && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleReset}
+              className="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+            >
+              Reset Filters
+            </motion.button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen px-4 py-8 bg-gray-100 dark:bg-gray-900">
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Video Games Sales Analytics
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Video Games Sales Analytics
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              {selectedYear
+                ? `Viewing data for ${selectedYear}`
+                : "Select a year from the timeline to view detailed data"}
+              {selectedPlatform ? ` • Platform: ${selectedPlatform}` : ""}
+              {selectedGenre ? ` • Genre: ${selectedGenre}` : ""}
+            </p>
+          </div>
           {(selectedPlatform || selectedGenre || selectedYear) && (
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -90,11 +144,12 @@ export const Dashboard = () => {
                   onGenreClick={(genre) =>
                     setSelectedGenre(genre === selectedGenre ? null : genre)
                   }
+                  isLoading={isGamesLoading}
                 />
               )}
             </AnimatePresence>
 
-            <motion.div layout>
+            <motion.div layout className="h-full">
               <SalesDistributionChart
                 data={filteredData?.platformSales ?? []}
                 onBarClick={(platform) =>
@@ -105,7 +160,7 @@ export const Dashboard = () => {
               />
             </motion.div>
 
-            <motion.div layout>
+            <motion.div layout className="h-full">
               <GenreDistributionChart
                 data={filteredData?.genreData ?? []}
                 onSliceClick={(genre) =>
