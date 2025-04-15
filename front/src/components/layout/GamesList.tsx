@@ -30,7 +30,7 @@ export const GamesList = ({
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("global_Sales");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [selectedGame, setSelectedGame] = useState<VideoGame | null>(null);
   const gamesPerPage = 12;
 
@@ -114,7 +114,7 @@ export const GamesList = ({
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortOrder("desc");
+      setSortOrder("asc");
     }
   };
 
@@ -143,12 +143,12 @@ export const GamesList = ({
   );
 
   const LoadingGameCard = () => (
-    <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg animate-pulse">
-      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
+    <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700 animate-pulse">
+      <div className="w-3/4 h-6 mb-4 bg-gray-200 rounded dark:bg-gray-600"></div>
       <div className="space-y-2">
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/3"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-2/3"></div>
+        <div className="w-1/2 h-4 bg-gray-200 rounded dark:bg-gray-600"></div>
+        <div className="w-1/3 h-4 bg-gray-200 rounded dark:bg-gray-600"></div>
+        <div className="w-2/3 h-4 bg-gray-200 rounded dark:bg-gray-600"></div>
       </div>
     </div>
   );
@@ -168,7 +168,7 @@ export const GamesList = ({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onBackClick}
-                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-2 text-gray-600 rounded-full hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <svg
                   className="w-5 h-5"
@@ -241,12 +241,12 @@ export const GamesList = ({
 
           {/* Active Filters */}
           {(selectedPlatform || selectedGenre || search) && (
-            <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 Active filters:
               </span>
               {selectedPlatform && (
-                <span className="inline-flex items-center px-2 py-1 text-sm bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-lg">
+                <span className="inline-flex items-center px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded-lg dark:bg-indigo-900 dark:text-indigo-200">
                   Platform: {selectedPlatform}
                   <button
                     onClick={() => onPlatformClick(selectedPlatform)}
@@ -257,7 +257,7 @@ export const GamesList = ({
                 </span>
               )}
               {selectedGenre && (
-                <span className="inline-flex items-center px-2 py-1 text-sm bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-lg">
+                <span className="inline-flex items-center px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded-lg dark:bg-indigo-900 dark:text-indigo-200">
                   Genre: {selectedGenre}
                   <button
                     onClick={() => onGenreClick(selectedGenre)}
@@ -268,7 +268,7 @@ export const GamesList = ({
                 </span>
               )}
               {search && (
-                <span className="inline-flex items-center px-2 py-1 text-sm bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-lg">
+                <span className="inline-flex items-center px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded-lg dark:bg-indigo-900 dark:text-indigo-200">
                   Search: "{search}"
                   <button
                     onClick={() => setSearch("")}
@@ -291,7 +291,7 @@ export const GamesList = ({
             : currentGames.map((game) => (
                 <motion.div
                   key={`${game.name}-${game.platform}`}
-                  className="p-4 transition-all bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:shadow-md hover:bg-white dark:hover:bg-gray-600"
+                  className="p-4 transition-all rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:shadow-md hover:bg-white dark:hover:bg-gray-600"
                   whileHover={{ y: -4, scale: 1.02 }}
                   onClick={() => setSelectedGame(game)}
                 >
