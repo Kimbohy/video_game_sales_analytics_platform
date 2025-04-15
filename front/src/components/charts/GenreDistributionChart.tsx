@@ -34,11 +34,11 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-        <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700">
+        <p className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
           {data.genre}
         </p>
-        <p className="text-sm flex items-center justify-between gap-4">
+        <p className="flex items-center justify-between gap-4 text-sm">
           <span className="text-gray-600 dark:text-gray-300">Total Sales:</span>
           <span className="font-medium text-gray-900 dark:text-white">
             {data.totalSales.toFixed(2)}M
@@ -56,7 +56,7 @@ const CustomLegend = ({ payload, onSliceClick }: any) => {
       {payload.map((entry: any, index: number) => (
         <li
           key={index}
-          className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1 px-2 py-1 text-sm transition-colors rounded-full cursor-pointer"
           style={{
             backgroundColor: `${entry.color}15`,
             color: entry.color,
