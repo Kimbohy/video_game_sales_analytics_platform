@@ -10,6 +10,7 @@ interface GamesListProps {
   selectedGenre: string | null;
   onPlatformClick: (platform: string) => void;
   onGenreClick: (genre: string) => void;
+  onBackClick: () => void;
   isLoading?: boolean;
 }
 
@@ -23,6 +24,7 @@ export const GamesList = ({
   selectedGenre,
   onPlatformClick,
   onGenreClick,
+  onBackClick,
   isLoading = false,
 }: GamesListProps) => {
   const [search, setSearch] = useState("");
@@ -161,9 +163,31 @@ export const GamesList = ({
       >
         <div className="mb-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Games Released in {year}
-            </h2>
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onBackClick}
+                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </motion.button>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Games Released in {year}
+              </h2>
+            </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {isLoading ? (
                 <span className="animate-pulse">Loading games...</span>

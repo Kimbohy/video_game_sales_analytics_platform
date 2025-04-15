@@ -144,6 +144,7 @@ export const Dashboard = () => {
                   onGenreClick={(genre) =>
                     setSelectedGenre(genre === selectedGenre ? null : genre)
                   }
+                  onBackClick={() => setSelectedYear(null)}
                   isLoading={isGamesLoading}
                 />
               )}
