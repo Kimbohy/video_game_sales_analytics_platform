@@ -55,3 +55,8 @@
 /home/kim/code/sql/project/archive/back/bin/Debug/net9.0/DotEnv.Core.dll
 /home/kim/code/sql/project/archive/back/bin/Debug/net9.0/es/DotEnv.Core.resources.dll
 /home/kim/code/sql/project/archive/back/obj/Debug/net9.0/back.sourcelink.json
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/bine/Debug/net9.0/appsettings.Development.json
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/bine/Debug/net9.0/appsettings.json
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/bine/Debug/net9.0/back.deps.json
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/bine/Debug/net9.0/back.runtimeconfig.json
+/home/kim/code/sql/project/archive/back/bin/Debug/net9.0/bine/Debug/net9.0/back.staticwebassets.endpoints.json
