@@ -12,6 +12,7 @@ interface GamesListProps {
   onGenreClick: (genre: string) => void;
   onBackClick: () => void;
   isLoading?: boolean;
+  className?: string;
 }
 
 type SortField = "name" | "platform" | "genre" | "publisher" | "global_Sales";
@@ -26,6 +27,7 @@ export const GamesList = ({
   onGenreClick,
   onBackClick,
   isLoading = false,
+  className,
 }: GamesListProps) => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,7 +161,9 @@ export const GamesList = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="col-span-1 p-6 bg-white rounded-lg shadow-lg md:col-span-2 dark:bg-gray-800"
+        className={`col-span-1 p-6 bg-white rounded-lg shadow-lg md:col-span-2 dark:bg-gray-800 ${
+          className || ""
+        }`}
       >
         <div className="mb-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -241,7 +245,7 @@ export const GamesList = ({
 
           {/* Active Filters */}
           {(selectedPlatform || selectedGenre || search) && (
-            <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 active-filters">
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 Active filters:
               </span>

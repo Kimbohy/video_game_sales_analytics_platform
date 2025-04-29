@@ -5,6 +5,7 @@ import { SalesDistributionChart } from "../charts/SalesDistributionChart";
 import { GenreDistributionChart } from "../charts/GenreDistributionChart";
 import { TimelineChart } from "../charts/TimelineChart";
 import { GamesList } from "./GamesList";
+import { UserGuide } from "./UserGuide";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Dashboard = () => {
@@ -88,6 +89,7 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen px-4 py-8 bg-gray-100 dark:bg-gray-900">
+      <UserGuide />
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -118,7 +120,10 @@ export const Dashboard = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <AnimatePresence>
               {!selectedYear && (
-                <motion.div layout className="col-span-1 md:col-span-2">
+                <motion.div
+                  layout
+                  className="col-span-1 md:col-span-2 timeline-chart"
+                >
                   <TimelineChart
                     data={filteredData?.timelineData ?? []}
                     onYearClick={(year) =>
@@ -146,11 +151,12 @@ export const Dashboard = () => {
                   }
                   onBackClick={() => setSelectedYear(null)}
                   isLoading={isGamesLoading}
+                  className="games-list"
                 />
               )}
             </AnimatePresence>
 
-            <motion.div layout className="h-full">
+            <motion.div layout className="h-full platform-chart">
               <SalesDistributionChart
                 data={filteredData?.platformSales ?? []}
                 onBarClick={(platform) =>
@@ -161,7 +167,7 @@ export const Dashboard = () => {
               />
             </motion.div>
 
-            <motion.div layout className="h-full">
+            <motion.div layout className="h-full genre-chart">
               <GenreDistributionChart
                 data={filteredData?.genreData ?? []}
                 onSliceClick={(genre) =>
