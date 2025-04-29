@@ -9,16 +9,16 @@ import { UserGuide } from "./UserGuide";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Dashboard = () => {
-  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const [selectedConsole, setSelectedConsole] = useState<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   // Get filtered data based on current filters
   const { data: filteredData, isLoading: isFilteredDataLoading } = useQuery({
-    queryKey: ["filteredData", selectedPlatform, selectedGenre, selectedYear],
+    queryKey: ["filteredData", selectedConsole, selectedGenre, selectedYear],
     queryFn: () =>
       gameService.getFilteredData({
-        platform: selectedPlatform || undefined,
+        console: selectedConsole || undefined,
         genre: selectedGenre || undefined,
         year: selectedYear || undefined,
       }),
@@ -26,10 +26,10 @@ export const Dashboard = () => {
 
   // Get filtered games based on all filters
   const { data: filteredGames, isLoading: isGamesLoading } = useQuery({
-    queryKey: ["filteredGames", selectedPlatform, selectedGenre, selectedYear],
+    queryKey: ["filteredGames", selectedConsole, selectedGenre, selectedYear],
     queryFn: () =>
       gameService.getFilteredGames({
-        platform: selectedPlatform || undefined,
+        console: selectedConsole || undefined,
         genre: selectedGenre || undefined,
         year: selectedYear || undefined,
       }),
@@ -37,7 +37,7 @@ export const Dashboard = () => {
   });
 
   const handleReset = () => {
-    setSelectedPlatform(null);
+    setSelectedConsole(null);
     setSelectedGenre(null);
     setSelectedYear(null);
   };
@@ -72,7 +72,7 @@ export const Dashboard = () => {
           <p className="mb-6 text-gray-600 dark:text-gray-300">
             There is no data available for the selected filters.
           </p>
-          {(selectedPlatform || selectedGenre || selectedYear) && (
+          {(selectedConsole || selectedGenre || selectedYear) && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -100,11 +100,11 @@ export const Dashboard = () => {
               {selectedYear
                 ? `Viewing data for ${selectedYear}`
                 : "Select a year from the timeline to view detailed data"}
-              {selectedPlatform ? ` • Platform: ${selectedPlatform}` : ""}
+              {selectedConsole ? ` • Console: ${selectedConsole}` : ""}
               {selectedGenre ? ` • Genre: ${selectedGenre}` : ""}
             </p>
           </div>
-          {(selectedPlatform || selectedGenre || selectedYear) && (
+          {(selectedConsole || selectedGenre || selectedYear) && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -139,11 +139,11 @@ export const Dashboard = () => {
                 <GamesList
                   year={selectedYear}
                   games={filteredGames ?? []}
-                  selectedPlatform={selectedPlatform}
+                  selectedConsole={selectedConsole}
                   selectedGenre={selectedGenre}
-                  onPlatformClick={(platform) =>
-                    setSelectedPlatform(
-                      platform === selectedPlatform ? null : platform
+                  onConsoleClick={(console) =>
+                    setSelectedConsole(
+                      console === selectedConsole ? null : console
                     )
                   }
                   onGenreClick={(genre) =>
@@ -160,8 +160,8 @@ export const Dashboard = () => {
               <SalesDistributionChart
                 data={filteredData?.platformSales ?? []}
                 onBarClick={(platform) =>
-                  setSelectedPlatform(
-                    platform === selectedPlatform ? null : platform
+                  setSelectedConsole(
+                    platform === selectedConsole ? null : platform
                   )
                 }
               />

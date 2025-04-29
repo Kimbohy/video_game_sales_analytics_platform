@@ -1,29 +1,36 @@
-import { VideoGame } from "../../api/gameService";
+import { GameData } from "../../api/gameService";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { GameDetailsModal } from "../modals/GameDetailsModal";
 
 interface GamesListProps {
-  games: VideoGame[];
+  games: GameData[];
   year: number | null;
-  selectedPlatform: string | null;
+  selectedConsole: string | null;
   selectedGenre: string | null;
-  onPlatformClick: (platform: string) => void;
+  onConsoleClick: (console: string) => void;
   onGenreClick: (genre: string) => void;
   onBackClick: () => void;
   isLoading?: boolean;
   className?: string;
 }
 
-type SortField = "name" | "platform" | "genre" | "publisher" | "global_Sales";
+type SortField =
+  | "title"
+  | "console"
+  | "genre"
+  | "publisher"
+  | "developer"
+  | "criticScore"
+  | "totalSales";
 type SortOrder = "asc" | "desc";
 
 export const GamesList = ({
   games,
   year,
-  selectedPlatform,
+  selectedConsole,
   selectedGenre,
-  onPlatformClick,
+  onConsoleClick,
   onGenreClick,
   onBackClick,
   isLoading = false,
@@ -31,9 +38,9 @@ export const GamesList = ({
 }: GamesListProps) => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState<SortField>("global_Sales");
+  const [sortField, setSortField] = useState<SortField>("totalSales");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  const [selectedGame, setSelectedGame] = useState<VideoGame | null>(null);
+  const [selectedGame, setSelectedGame] = useState<GameData | null>(null);
   const gamesPerPage = 12;
 
   // Filter and sort games
@@ -45,21 +52,30 @@ export const GamesList = ({
       const searchLower = search.toLowerCase();
       result = result.filter(
         (game) =>
-          game.name.toLowerCase().includes(searchLower) ||
-          game.platform.toLowerCase().includes(searchLower) ||
+          game.title.toLowerCase().includes(searchLower) ||
+          game.console.toLowerCase().includes(searchLower) ||
           game.genre.toLowerCase().includes(searchLower) ||
-          game.publisher.toLowerCase().includes(searchLower)
+          game.publisher.toLowerCase().includes(searchLower) ||
+          game.developer.toLowerCase().includes(searchLower)
       );
     }
 
     // Apply sorting
     result.sort((a, b) => {
       let comparison = 0;
-      if (sortField === "global_Sales") {
-        comparison = b[sortField] - a[sortField];
+
+      if (sortField === "totalSales" || sortField === "criticScore") {
+        // For numeric fields
+        const aValue = a[sortField] || 0;
+        const bValue = b[sortField] || 0;
+        comparison = bValue - aValue;
       } else {
-        comparison = String(a[sortField]).localeCompare(String(b[sortField]));
+        // For string fields
+        const aValue = String(a[sortField] || "");
+        const bValue = String(b[sortField] || "");
+        comparison = aValue.localeCompare(bValue);
       }
+
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
@@ -69,7 +85,7 @@ export const GamesList = ({
   // Reset to first page when filters change
   useMemo(() => {
     setCurrentPage(1);
-  }, [search, selectedPlatform, selectedGenre]);
+  }, [search, selectedConsole, selectedGenre]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredAndSortedGames.length / gamesPerPage);
@@ -155,6 +171,17 @@ export const GamesList = ({
     </div>
   );
 
+  const formatReleaseDate = (dateString: string | null) => {
+    if (!dateString) return "Unknown";
+
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   return (
     <>
       <motion.div
@@ -207,7 +234,7 @@ export const GamesList = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search games, platforms, genres..."
+                  placeholder="Search games, consoles, genres, developers..."
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
@@ -235,25 +262,27 @@ export const GamesList = ({
                 Sort by:
               </span>
               <div className="flex flex-wrap gap-2">
-                <SortButton field="name" label="Name" />
-                <SortButton field="global_Sales" label="Sales" />
-                <SortButton field="platform" label="Platform" />
+                <SortButton field="title" label="Title" />
+                <SortButton field="totalSales" label="Sales" />
+                <SortButton field="criticScore" label="Score" />
+                <SortButton field="console" label="Console" />
                 <SortButton field="genre" label="Genre" />
+                <SortButton field="developer" label="Developer" />
               </div>
             </div>
           </div>
 
           {/* Active Filters */}
-          {(selectedPlatform || selectedGenre || search) && (
+          {(selectedConsole || selectedGenre || search) && (
             <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 active-filters">
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 Active filters:
               </span>
-              {selectedPlatform && (
+              {selectedConsole && (
                 <span className="inline-flex items-center px-2 py-1 text-sm text-indigo-800 bg-indigo-100 rounded-lg dark:bg-indigo-900 dark:text-indigo-200">
-                  Platform: {selectedPlatform}
+                  Console: {selectedConsole}
                   <button
-                    onClick={() => onPlatformClick(selectedPlatform)}
+                    onClick={() => onConsoleClick(selectedConsole)}
                     className="ml-1 hover:text-indigo-600 dark:hover:text-indigo-400"
                   >
                     ×
@@ -294,29 +323,50 @@ export const GamesList = ({
                 .map((_, i) => <LoadingGameCard key={i} />)
             : currentGames.map((game) => (
                 <motion.div
-                  key={`${game.name}-${game.platform}`}
+                  key={`${game.title}-${game.console}`}
                   className="p-4 transition-all rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:shadow-md hover:bg-white dark:hover:bg-gray-600"
                   whileHover={{ y: -4, scale: 1.02 }}
                   onClick={() => setSelectedGame(game)}
                 >
                   <div className="flex flex-col h-full">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {game.name}
-                    </h3>
-                    <div className="mt-2 space-y-2">
+                    <div className="flex items-start gap-3">
+                      {game.img && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={game.img}
+                            alt={game.title}
+                            className="object-cover w-16 h-16 rounded"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {game.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Released: {formatReleaseDate(game.releaseDate)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 space-y-2">
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onPlatformClick(game.platform);
+                            onConsoleClick(game.console);
                           }}
                           className={`inline-flex items-center px-2 py-1 text-sm rounded-lg transition-colors ${
-                            selectedPlatform === game.platform
+                            selectedConsole === game.console
                               ? "bg-indigo-600 text-white"
                               : "text-gray-600 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-gray-600"
                           }`}
                         >
-                          {game.platform}
+                          {game.console}
                         </button>
                         <button
                           onClick={(e) => {
@@ -332,11 +382,40 @@ export const GamesList = ({
                           {game.genre}
                         </button>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {game.publisher}
-                      </p>
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            {game.developer !== game.publisher ? (
+                              <>Dev: {game.developer}</>
+                            ) : (
+                              <>Publisher: {game.publisher}</>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          {game.criticScore ? (
+                            <span
+                              className={`px-2 py-1 text-sm rounded ${
+                                game.criticScore >= 8
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                  : game.criticScore >= 6
+                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              }`}
+                            >
+                              Score: {game.criticScore}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
                       <p className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                        {game.global_Sales}M Sales
+                        {game.totalSales > 0 ||
+                        game.naSales > 0 ||
+                        game.palSales > 0 ||
+                        game.jpSales > 0 ||
+                        game.otherSales > 0
+                          ? `${game.totalSales}M Sales`
+                          : "Sales data not available"}
                       </p>
                     </div>
                   </div>

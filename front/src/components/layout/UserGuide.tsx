@@ -494,9 +494,14 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
           <div className="fixed inset-0 z-50 pointer-events-none">
             <motion.div
               ref={tooltipRef}
-              layout
+              layout="position"
               key={`tooltip-${currentStep.id}`}
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{
+                opacity: 0,
+                scale: 0.9,
+                top: tooltipPosition.top,
+                left: tooltipPosition.left,
+              }}
               animate={{
                 opacity: 1,
                 scale: 1,
@@ -511,6 +516,11 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
                 opacity: { duration: 0.2 },
               }}
               className="absolute max-w-md p-6 bg-white rounded-lg shadow-xl pointer-events-auto dark:bg-gray-800"
+              style={{
+                top: tooltipPosition.top,
+                left: tooltipPosition.left,
+                transform: "none",
+              }}
             >
               {/* Arrow pointing to target element */}
               {currentStep.position.targetElement !== "body" && (

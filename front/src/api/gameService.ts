@@ -2,36 +2,41 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:5053/api";
 
-export interface GameStats {
+export interface VGStatsData {
   totalGames: number;
-  totalPlatforms: number;
+  totalConsoles: number;
   totalGenres: number;
   totalPublishers: number;
+  totalDevelopers: number;
   totalSales: number;
   averageSales: number;
   maxSales: number;
   minSales: number;
+  averageCriticScore: number;
 }
 
-export interface VideoGame {
-  rank: number;
-  name: string;
-  platform: string;
-  year: number;
+export interface GameData {
+  img: string;
+  title: string;
+  console: string;
   genre: string;
   publisher: string;
-  nA_Sales: number;
-  eU_Sales: number;
-  jP_Sales: number;
-  other_Sales: number;
-  global_Sales: number;
+  developer: string;
+  criticScore: number;
+  totalSales: number;
+  naSales: number;
+  jpSales: number;
+  palSales: number;
+  otherSales: number;
+  releaseDate: string;
+  lastUpdate: string;
 }
 
 export interface PlatformSales {
   platform: string;
   globalSales: number;
   naSales: number;
-  euSales: number;
+  palSales: number;
   jpSales: number;
   otherSales: number;
   gameCount: number;
@@ -57,60 +62,80 @@ export interface FilteredData {
 
 export const gameService = {
   getStats: () =>
-    axios.get<GameStats>(`${API_BASE_URL}/stats`).then((res) => res.data),
+    axios.get<VGStatsData>(`${API_BASE_URL}/stats`).then((res) => res.data),
+
   getTopGames: (limit: number) =>
     axios
-      .get<VideoGame[]>(`${API_BASE_URL}/games/top/${limit}`)
+      .get<GameData[]>(`${API_BASE_URL}/games/top/${limit}`)
       .then((res) => res.data),
-  getGamesByPlatform: (platform: string) =>
+
+  getGamesByConsole: (console: string) =>
     axios
-      .get<VideoGame[]>(`${API_BASE_URL}/games/platform/${platform}`)
+      .get<GameData[]>(`${API_BASE_URL}/games/console/${console}`)
       .then((res) => res.data),
+
   getGamesByGenre: (genre: string) =>
     axios
-      .get<VideoGame[]>(`${API_BASE_URL}/games/genre/${genre}`)
+      .get<GameData[]>(`${API_BASE_URL}/games/genre/${genre}`)
       .then((res) => res.data),
+
   getGamesByYear: (year: number) =>
     axios
-      .get<VideoGame[]>(`${API_BASE_URL}/games/year/${year}`)
+      .get<GameData[]>(`${API_BASE_URL}/games/year/${year}`)
       .then((res) => res.data),
-  getPlatforms: () =>
-    axios.get<string[]>(`${API_BASE_URL}/platforms`).then((res) => res.data),
+
+  getConsoles: () =>
+    axios.get<string[]>(`${API_BASE_URL}/consoles`).then((res) => res.data),
+
   getGenres: () =>
     axios.get<string[]>(`${API_BASE_URL}/genres`).then((res) => res.data),
+
   getYears: () =>
     axios.get<number[]>(`${API_BASE_URL}/years`).then((res) => res.data),
-  getPlatformSalesDistribution: () =>
+
+  getDevelopers: () =>
+    axios.get<string[]>(`${API_BASE_URL}/developers`).then((res) => res.data),
+
+  getPublishers: () =>
+    axios.get<string[]>(`${API_BASE_URL}/publishers`).then((res) => res.data),
+
+  getConsoleSalesDistribution: () =>
     axios
-      .get<PlatformSales[]>(`${API_BASE_URL}/stats/platform-sales`)
+      .get<PlatformSales[]>(`${API_BASE_URL}/stats/console-sales`)
       .then((res) => res.data),
+
   getTimelineData: () =>
     axios
       .get<YearSales[]>(`${API_BASE_URL}/stats/timeline`)
       .then((res) => res.data),
+
   getGenreDistribution: () =>
     axios
       .get<GenreSales[]>(`${API_BASE_URL}/stats/genre-distribution`)
       .then((res) => res.data),
-  getPlatformData: (platform: string) =>
+
+  getConsoleData: (console: string) =>
     axios
-      .get<PlatformSales[]>(`${API_BASE_URL}/platform/${platform}`)
+      .get<PlatformSales[]>(`${API_BASE_URL}/console/${console}`)
       .then((res) => res.data),
+
   getGenreData: (genre: string) =>
     axios
       .get<GenreSales[]>(`${API_BASE_URL}/genre/${genre}`)
       .then((res) => res.data),
+
   getYearData: (year: number) =>
     axios
       .get<YearSales[]>(`${API_BASE_URL}/year/${year}`)
       .then((res) => res.data),
+
   getFilteredData: (filters: {
-    platform?: string;
+    console?: string;
     genre?: string;
     year?: number;
   }) => {
     const params = new URLSearchParams();
-    if (filters.platform) params.append("platform", filters.platform);
+    if (filters.console) params.append("console", filters.console);
     if (filters.genre) params.append("genre", filters.genre);
     if (filters.year) params.append("year", filters.year.toString());
 
@@ -118,18 +143,26 @@ export const gameService = {
       .get<FilteredData>(`${API_BASE_URL}/filtered-data?${params.toString()}`)
       .then((res) => res.data);
   },
+
   getFilteredGames: (filters: {
-    platform?: string;
+    console?: string;
     genre?: string;
     year?: number;
+    publisher?: string;
+    developer?: string;
+    minCriticScore?: number;
   }) => {
     const params = new URLSearchParams();
-    if (filters.platform) params.append("platform", filters.platform);
+    if (filters.console) params.append("console", filters.console);
     if (filters.genre) params.append("genre", filters.genre);
     if (filters.year) params.append("year", filters.year.toString());
+    if (filters.publisher) params.append("publisher", filters.publisher);
+    if (filters.developer) params.append("developer", filters.developer);
+    if (filters.minCriticScore)
+      params.append("minCriticScore", filters.minCriticScore.toString());
 
     return axios
-      .get<VideoGame[]>(`${API_BASE_URL}/games/filtered?${params.toString()}`)
+      .get<GameData[]>(`${API_BASE_URL}/games/filtered?${params.toString()}`)
       .then((res) => res.data);
   },
 };

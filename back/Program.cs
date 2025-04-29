@@ -31,18 +31,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
+// Basic data endpoints
 app.MapGet("/api/games/top/{count}", async (DatabaseService db, int count) =>
 {
-    return await db.GetTopSellingGamesAsync(count);
+    return await db.GetTopGamesAsync(count);
 })
 .WithName("GetTopGames")
 .WithOpenApi();
 
-app.MapGet("/api/games/platform/{platform}", async (DatabaseService db, string platform) =>
+app.MapGet("/api/games/console/{console}", async (DatabaseService db, string console) =>
 {
-    return await db.GetGamesByPlatformAsync(platform);
+    return await db.GetGamesByConsoleAsync(console);
 })
-.WithName("GetGamesByPlatform")
+.WithName("GetGamesByConsole")
 .WithOpenApi();
 
 app.MapGet("/api/games/genre/{genre}", async (DatabaseService db, string genre) =>
@@ -59,19 +60,63 @@ app.MapGet("/api/games/year/{year}", async (DatabaseService db, int year) =>
 .WithName("GetGamesByYear")
 .WithOpenApi();
 
-app.MapGet("/api/games/filtered", async (DatabaseService db, string? platform, string? genre, int? year) =>
+app.MapGet("/api/games/filtered", async (DatabaseService db, string? console, string? genre, int? year, string? publisher, string? developer, decimal? minCriticScore) =>
 {
-    return await db.GetFilteredGamesAsync(platform, genre, year);
+    return await db.GetFilteredGamesAsync(console, genre, year, publisher, developer, minCriticScore);
 })
 .WithName("GetFilteredGames")
 .WithOpenApi();
 
-// Aggregated data endpoints
-app.MapGet("/api/stats/platform-sales", async (DatabaseService db) =>
+// Get options for filters
+app.MapGet("/api/consoles", async (DatabaseService db) =>
 {
-    return await db.GetPlatformSalesDistributionAsync();
+    return await db.GetConsolesAsync();
 })
-.WithName("GetPlatformSalesDistribution")
+.WithName("GetConsoles")
+.WithOpenApi();
+
+app.MapGet("/api/genres", async (DatabaseService db) =>
+{
+    return await db.GetGenresAsync();
+})
+.WithName("GetGenres")
+.WithOpenApi();
+
+app.MapGet("/api/years", async (DatabaseService db) =>
+{
+    return await db.GetYearsAsync();
+})
+.WithName("GetYears")
+.WithOpenApi();
+
+app.MapGet("/api/developers", async (DatabaseService db) =>
+{
+    return await db.GetDevelopersAsync();
+})
+.WithName("GetDevelopers")
+.WithOpenApi();
+
+app.MapGet("/api/publishers", async (DatabaseService db) =>
+{
+    return await db.GetPublishersAsync();
+})
+.WithName("GetPublishers")
+.WithOpenApi();
+
+// General statistics
+app.MapGet("/api/stats", async (DatabaseService db) =>
+{
+    return await db.GetStatsDataAsync();
+})
+.WithName("GetStats")
+.WithOpenApi();
+
+// Aggregated data endpoints
+app.MapGet("/api/stats/console-sales", async (DatabaseService db) =>
+{
+    return await db.GetConsoleSalesDistributionAsync();
+})
+.WithName("GetConsoleSalesDistribution")
 .WithOpenApi();
 
 app.MapGet("/api/stats/timeline", async (DatabaseService db) =>
@@ -89,11 +134,11 @@ app.MapGet("/api/stats/genre-distribution", async (DatabaseService db) =>
 .WithOpenApi();
 
 // Individual data endpoints
-app.MapGet("/api/platform/{platform}", async (DatabaseService db, string platform) =>
+app.MapGet("/api/console/{console}", async (DatabaseService db, string console) =>
 {
-    return await db.GetPlatformDataAsync(platform);
+    return await db.GetConsoleDataAsync(console);
 })
-.WithName("GetPlatformData")
+.WithName("GetConsoleData")
 .WithOpenApi();
 
 app.MapGet("/api/genre/{genre}", async (DatabaseService db, string genre) =>
@@ -111,18 +156,9 @@ app.MapGet("/api/year/{year}", async (DatabaseService db, int year) =>
 .WithOpenApi();
 
 // Filtered data endpoints
-app.MapGet("/api/filtered-data", async (DatabaseService db, string? platform, string? genre, int? year) =>
+app.MapGet("/api/filtered-data", async (DatabaseService db, string? console, string? genre, int? year) =>
 {
-    var platformSales = await db.GetPlatformSalesDistributionWithFilter(platform, genre, year);
-    var genreData = await db.GetGenreDistributionWithFilter(platform, genre, year);
-    var timelineData = await db.GetTimelineDataWithFilter(platform, genre, year);
-
-    return new
-    {
-        platformSales,
-        genreData,
-        timelineData
-    };
+    return await db.GetFilteredDataAsync(console, genre, year);
 })
 .WithName("GetFilteredData")
 .WithOpenApi();
