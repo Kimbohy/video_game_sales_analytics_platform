@@ -27,6 +27,7 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
     left: 0,
   });
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const animationInProgressRef = useRef(false);
 
   // Store original body overflow style
   const [originalBodyOverflow, setOriginalBodyOverflow] = useState("");
@@ -153,14 +154,21 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
   };
 
   // Filter steps to only include those whose elements are currently in the DOM
-  const availableSteps = guideSteps.filter((step) =>
-    checkElementExists(step.position.targetElement)
-  );
+  // Moved inside useEffect to prevent re-calculating on every render
+  const [availableSteps, setAvailableSteps] = useState<GuideStep[]>([]);
 
-  // Reset step index when available steps change
+  // Update available steps when guide steps change
   useEffect(() => {
-    setCurrentStepIndex(0);
-  }, [showGamesListOnly]);
+    const steps = guideSteps.filter((step) =>
+      checkElementExists(step.position.targetElement)
+    );
+    setAvailableSteps(steps);
+
+    // Reset current step index when available steps change
+    if (steps.length > 0) {
+      setCurrentStepIndex(0);
+    }
+  }, [showGamesListOnly]); // Only recalculate when showGamesListOnly changes
 
   // Check if the user has seen the guide before
   useEffect(() => {
@@ -195,86 +203,64 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
     };
   }, [isVisible, originalBodyOverflow]);
 
-  // Position the tooltip near the target element and scroll into view if needed
-  useEffect(() => {
-    if (!isVisible || availableSteps.length === 0) return;
-
-    const currentStep = availableSteps[currentStepIndex];
-    if (!currentStep) return;
-
-    const targetSelector = currentStep.position.targetElement;
-
-    if (targetSelector === "body") {
-      // Center in viewport for welcome step
+  // Get element position and dimensions safely
+  const getElementRect = (selector: string) => {
+    if (selector === "body") {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      setTooltipPosition({
-        left: viewportWidth / 2 - 200, // Assuming tooltip width ~400px
-        top: viewportHeight / 2 - 150, // Roughly center vertically
-      });
-
-      setTargetElementDimensions({
+      return {
         width: 0,
         height: 0,
-        top: 0,
-        left: 0,
-      });
-
-      return;
+        top: viewportHeight / 2,
+        left: viewportWidth / 2,
+        bottom: viewportHeight / 2,
+        right: viewportWidth / 2,
+      };
     }
 
-    // Find the target element
-    const targetElement = document.querySelector(targetSelector) as HTMLElement;
-    if (!targetElement) return;
+    const element = document.querySelector(selector) as HTMLElement;
+    if (!element) {
+      // Return default values if element not found
+      return { width: 0, height: 0, top: 0, left: 0, bottom: 0, right: 0 };
+    }
 
-    // Get dimensions and position
-    const rect = targetElement.getBoundingClientRect();
-    setTargetElementDimensions({
-      width: rect.width,
-      height: rect.height,
-      top: rect.top,
-      left: rect.left,
-    });
+    return element.getBoundingClientRect();
+  };
 
+  // Smooth scrolling to target element
+  const scrollToElement = (rect: DOMRect, callback: () => void) => {
     // Check if element is in viewport
     const isElementInViewport =
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <=
-        (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+      rect.top >= 50 &&
+      rect.left >= 50 &&
+      rect.bottom <= window.innerHeight - 50 &&
+      rect.right <= window.innerWidth - 50;
 
-    // Scroll element into view if needed
     if (!isElementInViewport) {
       // Calculate the scroll position to center the element
       const scrollOffset = rect.top - window.innerHeight / 2 + rect.height / 2;
+
+      // Set animation flag
+      animationInProgressRef.current = true;
+
       window.scrollTo({
         top: window.scrollY + scrollOffset,
         behavior: "smooth",
       });
 
-      // Wait for scroll to complete before positioning tooltip
+      // Wait for scroll to complete before callback
       setTimeout(() => {
-        // Re-measure position after scrolling
-        const updatedRect = targetElement.getBoundingClientRect();
-        setTargetElementDimensions({
-          width: updatedRect.width,
-          height: updatedRect.height,
-          top: updatedRect.top,
-          left: updatedRect.left,
-        });
-
-        // Position tooltip based on updated measurements
-        positionTooltip(updatedRect, currentStep);
+        animationInProgressRef.current = false;
+        callback();
       }, 500);
     } else {
-      // Position tooltip immediately if element is in viewport
-      positionTooltip(rect, currentStep);
+      // Element is in viewport, no need to scroll
+      callback();
     }
-  }, [currentStepIndex, isVisible, availableSteps]);
+  };
 
-  // Helper function to position tooltip
+  // Position tooltip with transition animation
   const positionTooltip = (rect: DOMRect, step: GuideStep) => {
     const tooltipHeight = tooltipRef.current?.offsetHeight || 250;
     const tooltipWidth = tooltipRef.current?.offsetWidth || 400;
@@ -302,21 +288,115 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
     }
 
     // Ensure tooltip stays within viewport
-    if (top < 10) top = 10;
-    if (left < 10) left = 10;
-    if (left + tooltipWidth > window.innerWidth) {
-      left = window.innerWidth - tooltipWidth - 10;
+    if (top < 20) top = 20;
+    if (left < 20) left = 20;
+    if (left + tooltipWidth > window.innerWidth - 20) {
+      left = window.innerWidth - tooltipWidth - 20;
     }
-    if (top + tooltipHeight > window.innerHeight) {
-      top = window.innerHeight - tooltipHeight - 10;
+    if (top + tooltipHeight > window.innerHeight - 20) {
+      top = window.innerHeight - tooltipHeight - 20;
     }
 
     setTooltipPosition({ top, left });
   };
 
+  // Update target element highlight and tooltip position
+  const updateElementHighlight = (stepIndex: number) => {
+    if (!isVisible || availableSteps.length === 0) return;
+
+    const step = availableSteps[stepIndex];
+    if (!step) return;
+
+    const rect = getElementRect(step.position.targetElement);
+
+    // First update the spotlight position
+    setTargetElementDimensions({
+      width: rect.width,
+      height: rect.height,
+      top: rect.top,
+      left: rect.left,
+    });
+
+    // Then scroll if needed and position tooltip
+    scrollToElement(rect, () => {
+      // Get fresh position after scrolling
+      const updatedRect = getElementRect(step.position.targetElement);
+      positionTooltip(updatedRect, step);
+    });
+  };
+
+  // Position the tooltip near the target element and scroll into view if needed
+  useEffect(() => {
+    if (!isVisible || availableSteps.length === 0) return;
+
+    const handleScroll = () => {
+      // Update highlight position after scrolling
+      if (currentStepIndex < availableSteps.length) {
+        const currentStep = availableSteps[currentStepIndex];
+        const element = document.querySelector(
+          currentStep.position.targetElement
+        ) as HTMLElement;
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          // Update spotlight position
+          setTargetElementDimensions({
+            width: rect.width,
+            height: rect.height,
+            top: rect.top,
+            left: rect.left,
+          });
+          // Update tooltip position
+          positionTooltip(rect, currentStep);
+        }
+      }
+    };
+
+    // Add a small delay to ensure DOM elements are fully rendered
+    const timeoutId = setTimeout(() => {
+      if (currentStepIndex < availableSteps.length) {
+        updateElementHighlight(currentStepIndex);
+      }
+    }, 100);
+
+    // Add scroll event listener
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [currentStepIndex, isVisible, availableSteps.length]); // Only depend on the length, not the entire array
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (
+        isVisible &&
+        availableSteps.length > 0 &&
+        currentStepIndex < availableSteps.length
+      ) {
+        // Use a debounce technique to avoid too many updates
+        if (animationInProgressRef.current) return;
+
+        animationInProgressRef.current = true;
+        setTimeout(() => {
+          updateElementHighlight(currentStepIndex);
+          animationInProgressRef.current = false;
+        }, 100);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isVisible, currentStepIndex, availableSteps.length]);
+
   const currentStep = availableSteps[currentStepIndex] || guideSteps[0];
 
   const handleNextStep = () => {
+    if (animationInProgressRef.current) return;
+
     if (currentStepIndex < availableSteps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     } else {
@@ -325,6 +405,8 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
   };
 
   const handlePrevStep = () => {
+    if (animationInProgressRef.current) return;
+
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
     }
@@ -356,7 +438,7 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
         animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.1 }}
         onClick={resetGuide}
-        className="fixed bottom-4 right-4 z-50 p-3 text-white bg-indigo-600 rounded-full shadow-lg hover:bg-indigo-700"
+        className="fixed z-50 p-3 text-white bg-indigo-600 rounded-full shadow-lg bottom-4 right-4 hover:bg-indigo-700"
         title="Show Guide"
       >
         <svg
@@ -382,21 +464,33 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
       {isVisible && (
         <>
           {/* Spotlight overlay */}
-          <div className="fixed inset-0 z-40 bg-black/50 pointer-events-none">
+          <div className="fixed inset-0 z-40 pointer-events-none bg-black/50">
             {/* Transparent cutout for highlighted element */}
             {currentStep.position.targetElement !== "body" && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute"
-                style={{
+                initial={false}
+                animate={{
                   top: targetElementDimensions.top - 8,
                   left: targetElementDimensions.left - 8,
                   width: targetElementDimensions.width + 16,
                   height: targetElementDimensions.height + 16,
+                  opacity: 1,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 30,
+                  opacity: { duration: 0.2 },
+                }}
+                className="absolute"
+                style={{
                   boxShadow: "0 0 0 2000px rgba(0, 0, 0, 0.75)",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "2px solid rgba(99, 102, 241, 0.8)",
                   borderRadius: "8px",
+                  pointerEvents: "none",
+                  backdropFilter: "blur(0px)",
+                  boxSizing: "content-box",
                 }}
               />
             )}
@@ -406,22 +500,84 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
           <div className="fixed inset-0 z-50 pointer-events-none">
             <motion.div
               ref={tooltipRef}
-              key={currentStep.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="absolute max-w-md p-6 pointer-events-auto bg-white rounded-lg shadow-xl dark:bg-gray-800"
-              style={{
+              layout
+              key={`tooltip-${currentStep.id}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
                 top: tooltipPosition.top,
                 left: tooltipPosition.left,
               }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                opacity: { duration: 0.2 },
+              }}
+              className="absolute max-w-md p-6 bg-white rounded-lg shadow-xl pointer-events-auto dark:bg-gray-800"
             >
+              {/* Arrow pointing to target element */}
+              {currentStep.position.targetElement !== "body" && (
+                <motion.div
+                  layout
+                  className="absolute w-3 h-3 bg-white dark:bg-gray-800"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  style={{
+                    [currentStep.position.placement === "top"
+                      ? "bottom"
+                      : currentStep.position.placement === "bottom"
+                      ? "top"
+                      : currentStep.position.placement === "left"
+                      ? "right"
+                      : "left"]: "-6px",
+                    transform: "rotate(45deg)",
+                    left:
+                      currentStep.position.placement === "top" ||
+                      currentStep.position.placement === "bottom"
+                        ? "50%"
+                        : currentStep.position.placement === "left"
+                        ? "calc(100% - 6px)"
+                        : "6px",
+                    top:
+                      currentStep.position.placement === "left" ||
+                      currentStep.position.placement === "right"
+                        ? "50%"
+                        : currentStep.position.placement === "top"
+                        ? "calc(100% - 6px)"
+                        : "6px",
+                    marginLeft:
+                      currentStep.position.placement === "top" ||
+                      currentStep.position.placement === "bottom"
+                        ? "-6px"
+                        : "0",
+                    marginTop:
+                      currentStep.position.placement === "left" ||
+                      currentStep.position.placement === "right"
+                        ? "-6px"
+                        : "0",
+                    zIndex: -1,
+                  }}
+                />
+              )}
+
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                <motion.h3
+                  layout
+                  className="text-xl font-bold text-gray-900 dark:text-white"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
                   {currentStep.title}
-                </h3>
-                <button
+                </motion.h3>
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
                   onClick={completeGuide}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 >
@@ -437,14 +593,26 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
                       clipRule="evenodd"
                     />
                   </svg>
-                </button>
+                </motion.button>
               </div>
-              <div className="mb-6">
+              <motion.div
+                layout
+                className="mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
                 <p className="text-gray-600 dark:text-gray-300">
                   {currentStep.description}
                 </p>
-              </div>
-              <div className="flex items-center justify-between">
+              </motion.div>
+              <motion.div
+                layout
+                className="flex items-center justify-between"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 <div className="flex items-center gap-1">
                   {availableSteps.map((_, index) => (
                     <span
@@ -460,13 +628,16 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
                 <div className="flex gap-2">
                   <button
                     onClick={handlePrevStep}
-                    disabled={currentStepIndex === 0}
+                    disabled={
+                      currentStepIndex === 0 || animationInProgressRef.current
+                    }
                     className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md disabled:opacity-50 dark:text-gray-300 dark:border-gray-600"
                   >
                     Previous
                   </button>
                   <button
                     onClick={handleNextStep}
+                    disabled={animationInProgressRef.current}
                     className="px-3 py-1 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
                   >
                     {currentStepIndex === availableSteps.length - 1
@@ -474,7 +645,7 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
                       : "Next"}
                   </button>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
           </div>
 
