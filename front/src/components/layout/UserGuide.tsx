@@ -11,7 +11,11 @@ interface GuideStep {
   };
 }
 
-export const UserGuide = () => {
+interface UserGuideProps {
+  showGamesListOnly?: boolean;
+}
+
+export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [hasCompletedGuide, setHasCompletedGuide] = useState(false);
@@ -27,14 +31,151 @@ export const UserGuide = () => {
   // Store original body overflow style
   const [originalBodyOverflow, setOriginalBodyOverflow] = useState("");
 
+  // Guide steps with instructions for using the dashboard
+  const dashboardGuideSteps: GuideStep[] = [
+    {
+      id: "welcome",
+      title: "Welcome to Video Game Sales Analytics",
+      description:
+        "This dashboard helps you explore video game sales data across different platforms, genres, and years. Let's take a quick tour!",
+      position: {
+        placement: "top",
+        targetElement: "body",
+      },
+    },
+    {
+      id: "timeline",
+      title: "Timeline Chart",
+      description:
+        "Click on any year in this chart to see detailed games released during that period. The blue line shows total sales while the green line shows the number of games released.",
+      position: {
+        placement: "bottom",
+        targetElement: ".timeline-chart",
+      },
+    },
+    {
+      id: "platform-chart",
+      title: "Platform Sales Distribution",
+      description:
+        "This chart shows sales by platform. Click on any bar to filter the dashboard by that platform. Each color represents a different region.",
+      position: {
+        placement: "left",
+        targetElement: ".platform-chart",
+      },
+    },
+    {
+      id: "genre-chart",
+      title: "Genre Distribution",
+      description:
+        "The pie chart shows sales by genre. Click on any slice to filter the dashboard by that genre. You can combine filters for deeper analysis.",
+      position: {
+        placement: "right",
+        targetElement: ".genre-chart",
+      },
+    },
+    {
+      id: "filters",
+      title: "Active Filters",
+      description:
+        "When you select filters, they'll appear here. Click the '×' button to remove a filter. Use the 'Reset Filters' button to clear all selections.",
+      position: {
+        placement: "bottom",
+        targetElement: ".active-filters",
+      },
+    },
+  ];
+
+  // Specific guide steps for the games list view
+  const gamesListGuideSteps: GuideStep[] = [
+    {
+      id: "games-list-intro",
+      title: "Games List View",
+      description:
+        "You're now viewing games released in the selected year. This view shows you detailed information about each game.",
+      position: {
+        placement: "top",
+        targetElement: ".games-list",
+      },
+    },
+    {
+      id: "games-search",
+      title: "Search and Filter",
+      description:
+        "Use the search box to find specific games, platforms, genres, or publishers. The results will update instantly as you type.",
+      position: {
+        placement: "bottom",
+        targetElement: "input[type='text']",
+      },
+    },
+    {
+      id: "games-sort",
+      title: "Sort Games",
+      description:
+        "You can sort the games by name, sales figures, platform, or genre by clicking these buttons. Click again to reverse the sort order.",
+      position: {
+        placement: "bottom",
+        targetElement:
+          ".games-list button[class*='flex items-center gap-1 px-3']",
+      },
+    },
+    {
+      id: "games-cards",
+      title: "Game Cards",
+      description:
+        "Click on any game card to see detailed sales information. You can also click on the platform or genre tags to filter the dashboard.",
+      position: {
+        placement: "right",
+        targetElement: ".games-list .grid > div:first-child",
+      },
+    },
+    {
+      id: "games-back",
+      title: "Return to Overview",
+      description:
+        "Click this back button to return to the dashboard overview and see the timeline chart again.",
+      position: {
+        placement: "right",
+        targetElement:
+          ".games-list button[class*='p-2 text-gray-600 rounded-full']",
+      },
+    },
+  ];
+
+  // Select which steps to show based on the showGamesListOnly prop
+  const guideSteps = showGamesListOnly
+    ? gamesListGuideSteps
+    : dashboardGuideSteps;
+
+  // Check if the specified element exists in the DOM
+  const checkElementExists = (selector: string): boolean => {
+    if (selector === "body") return true;
+    return document.querySelector(selector) !== null;
+  };
+
+  // Filter steps to only include those whose elements are currently in the DOM
+  const availableSteps = guideSteps.filter((step) =>
+    checkElementExists(step.position.targetElement)
+  );
+
+  // Reset step index when available steps change
+  useEffect(() => {
+    setCurrentStepIndex(0);
+  }, [showGamesListOnly]);
+
   // Check if the user has seen the guide before
   useEffect(() => {
-    const guideCompleted = localStorage.getItem("vgSalesGuideCompleted");
+    const storageKey = showGamesListOnly
+      ? "vgSalesGamesListGuideCompleted"
+      : "vgSalesGuideCompleted";
+    const guideCompleted = localStorage.getItem(storageKey);
     if (guideCompleted === "true") {
       setHasCompletedGuide(true);
       setIsVisible(false);
+    } else {
+      setHasCompletedGuide(false);
+      setIsVisible(true);
     }
-  }, []);
+  }, [showGamesListOnly]);
 
   // Block scrolling when guide is active
   useEffect(() => {
@@ -56,9 +197,11 @@ export const UserGuide = () => {
 
   // Position the tooltip near the target element and scroll into view if needed
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible || availableSteps.length === 0) return;
 
-    const currentStep = guideSteps[currentStepIndex];
+    const currentStep = availableSteps[currentStepIndex];
+    if (!currentStep) return;
+
     const targetSelector = currentStep.position.targetElement;
 
     if (targetSelector === "body") {
@@ -129,7 +272,7 @@ export const UserGuide = () => {
       // Position tooltip immediately if element is in viewport
       positionTooltip(rect, currentStep);
     }
-  }, [currentStepIndex, isVisible]);
+  }, [currentStepIndex, isVisible, availableSteps]);
 
   // Helper function to position tooltip
   const positionTooltip = (rect: DOMRect, step: GuideStep) => {
@@ -171,74 +314,10 @@ export const UserGuide = () => {
     setTooltipPosition({ top, left });
   };
 
-  // Guide steps with instructions for using the dashboard
-  const guideSteps: GuideStep[] = [
-    {
-      id: "welcome",
-      title: "Welcome to Video Game Sales Analytics",
-      description:
-        "This dashboard helps you explore video game sales data across different platforms, genres, and years. Let's take a quick tour!",
-      position: {
-        placement: "top",
-        targetElement: "body",
-      },
-    },
-    {
-      id: "timeline",
-      title: "Timeline Chart",
-      description:
-        "Click on any year in this chart to see detailed games released during that period. The blue line shows total sales while the green line shows the number of games released.",
-      position: {
-        placement: "bottom",
-        targetElement: ".timeline-chart",
-      },
-    },
-    {
-      id: "platform-chart",
-      title: "Platform Sales Distribution",
-      description:
-        "This chart shows sales by platform. Click on any bar to filter the dashboard by that platform. Each color represents a different region.",
-      position: {
-        placement: "left",
-        targetElement: ".platform-chart",
-      },
-    },
-    {
-      id: "genre-chart",
-      title: "Genre Distribution",
-      description:
-        "The pie chart shows sales by genre. Click on any slice to filter the dashboard by that genre. You can combine filters for deeper analysis.",
-      position: {
-        placement: "right",
-        targetElement: ".genre-chart",
-      },
-    },
-    {
-      id: "filters",
-      title: "Active Filters",
-      description:
-        "When you select filters, they'll appear here. Click the '×' button to remove a filter. Use the 'Reset Filters' button to clear all selections.",
-      position: {
-        placement: "bottom",
-        targetElement: ".active-filters",
-      },
-    },
-    {
-      id: "games-list",
-      title: "Game Details",
-      description:
-        "After selecting a year, you'll see a list of games. Click on any game card to view detailed sales information. You can also search and sort the list.",
-      position: {
-        placement: "top",
-        targetElement: ".games-list",
-      },
-    },
-  ];
-
-  const currentStep = guideSteps[currentStepIndex];
+  const currentStep = availableSteps[currentStepIndex] || guideSteps[0];
 
   const handleNextStep = () => {
-    if (currentStepIndex < guideSteps.length - 1) {
+    if (currentStepIndex < availableSteps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     } else {
       completeGuide();
@@ -252,7 +331,10 @@ export const UserGuide = () => {
   };
 
   const completeGuide = () => {
-    localStorage.setItem("vgSalesGuideCompleted", "true");
+    const storageKey = showGamesListOnly
+      ? "vgSalesGamesListGuideCompleted"
+      : "vgSalesGuideCompleted";
+    localStorage.setItem(storageKey, "true");
     setHasCompletedGuide(true);
     setIsVisible(false);
   };
@@ -262,6 +344,11 @@ export const UserGuide = () => {
     setIsVisible(true);
   };
 
+  // If there are no available steps, don't show the guide
+  if (availableSteps.length === 0) {
+    return null;
+  }
+
   if (hasCompletedGuide && !isVisible) {
     return (
       <motion.button
@@ -269,7 +356,7 @@ export const UserGuide = () => {
         animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.1 }}
         onClick={resetGuide}
-        className="fixed z-50 p-3 text-white bg-indigo-600 rounded-full shadow-lg bottom-4 right-4 hover:bg-indigo-700"
+        className="fixed bottom-4 right-4 z-50 p-3 text-white bg-indigo-600 rounded-full shadow-lg hover:bg-indigo-700"
         title="Show Guide"
       >
         <svg
@@ -295,7 +382,7 @@ export const UserGuide = () => {
       {isVisible && (
         <>
           {/* Spotlight overlay */}
-          <div className="fixed inset-0 z-40 pointer-events-none bg-black/50">
+          <div className="fixed inset-0 z-40 bg-black/50 pointer-events-none">
             {/* Transparent cutout for highlighted element */}
             {currentStep.position.targetElement !== "body" && (
               <motion.div
@@ -324,43 +411,12 @@ export const UserGuide = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="absolute max-w-md p-6 bg-white rounded-lg shadow-xl pointer-events-auto dark:bg-gray-800"
+              className="absolute max-w-md p-6 pointer-events-auto bg-white rounded-lg shadow-xl dark:bg-gray-800"
               style={{
                 top: tooltipPosition.top,
                 left: tooltipPosition.left,
               }}
             >
-              {/* Connecting line to target element (optional) */}
-              {currentStep.position.targetElement !== "body" && (
-                <div
-                  className="absolute w-2 h-2 bg-white dark:bg-gray-800"
-                  style={{
-                    [currentStep.position.placement === "top"
-                      ? "bottom"
-                      : currentStep.position.placement === "bottom"
-                      ? "top"
-                      : currentStep.position.placement === "left"
-                      ? "right"
-                      : "left"]: "-8px",
-                    transform: "rotate(45deg)",
-                    left:
-                      currentStep.position.placement === "top" ||
-                      currentStep.position.placement === "bottom"
-                        ? "50%"
-                        : currentStep.position.placement === "left"
-                        ? "calc(100% - 5px)"
-                        : "5px",
-                    top:
-                      currentStep.position.placement === "left" ||
-                      currentStep.position.placement === "right"
-                        ? "50%"
-                        : currentStep.position.placement === "top"
-                        ? "calc(100% - 5px)"
-                        : "5px",
-                  }}
-                />
-              )}
-
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                   {currentStep.title}
@@ -390,7 +446,7 @@ export const UserGuide = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  {guideSteps.map((_, index) => (
+                  {availableSteps.map((_, index) => (
                     <span
                       key={index}
                       className={`block w-2 h-2 rounded-full ${
@@ -413,7 +469,7 @@ export const UserGuide = () => {
                     onClick={handleNextStep}
                     className="px-3 py-1 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
                   >
-                    {currentStepIndex === guideSteps.length - 1
+                    {currentStepIndex === availableSteps.length - 1
                       ? "Finish"
                       : "Next"}
                   </button>

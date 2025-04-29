@@ -89,7 +89,7 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen px-4 py-8 bg-gray-100 dark:bg-gray-900">
-      <UserGuide />
+      <UserGuide showGamesListOnly={!!selectedYear} />
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <div>
