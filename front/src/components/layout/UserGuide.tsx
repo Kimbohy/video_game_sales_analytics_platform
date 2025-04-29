@@ -204,25 +204,19 @@ export const UserGuide = ({ showGamesListOnly = false }: UserGuideProps) => {
   }, [isVisible, originalBodyOverflow]);
 
   // Get element position and dimensions safely
-  const getElementRect = (selector: string) => {
+  const getElementRect = (selector: string): DOMRect => {
     if (selector === "body") {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      return {
-        width: 0,
-        height: 0,
-        top: viewportHeight / 2,
-        left: viewportWidth / 2,
-        bottom: viewportHeight / 2,
-        right: viewportWidth / 2,
-      };
+      // Create a DOMRect centered in the viewport
+      return new DOMRect(viewportWidth / 2, viewportHeight / 2, 0, 0);
     }
 
     const element = document.querySelector(selector) as HTMLElement;
     if (!element) {
-      // Return default values if element not found
-      return { width: 0, height: 0, top: 0, left: 0, bottom: 0, right: 0 };
+      // Return a default DOMRect if element not found
+      return new DOMRect(0, 0, 0, 0);
     }
 
     return element.getBoundingClientRect();
