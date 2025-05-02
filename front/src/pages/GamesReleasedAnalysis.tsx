@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { gameService } from "../api/gameService";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { GamesReleasedGuide } from "../components/layout/GamesReleasedGuide";
 import {
   AreaChart,
   Area,
@@ -295,8 +296,10 @@ const GamesReleasedAnalysis = () => {
         </p>
       </motion.div>
 
+      <GamesReleasedGuide />
+
       {/* Time Range Selector */}
-      <div className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+      <div className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800" id="time-range-selector">
         <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Select Time Range
         </h2>
@@ -345,183 +348,186 @@ const GamesReleasedAnalysis = () => {
       </div>
 
       {/* Selected Year Detail */}
-      {selectedYear && selectedYearData && (
-        <motion.div
-          ref={yearAnalysisRef}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {selectedYear} - Year Analysis
-            </h2>
-            <button
-              onClick={() => setSelectedYear(null)}
-              className="px-2 py-1 text-sm text-gray-600 rounded-md dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              Clear Selection
-            </button>
-          </div>
+      <AnimatePresence>
+        {selectedYear && selectedYearData && (
+          <motion.div
+            ref={yearAnalysisRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
+            transition={{ duration: 0.5 }}
+            className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {selectedYear} - Year Analysis
+              </h2>
+              <button
+                onClick={() => setSelectedYear(null)}
+                className="px-2 py-1 text-sm text-gray-600 rounded-md dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Clear Selection
+              </button>
+            </div>
 
-          {/* Year Stats */}
-          <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Total Games
-              </div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">
-                {formatNumber(selectedYearData.gameCount)}
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Total Sales
-              </div>
-              <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                {selectedYearData.globalSales.toFixed(2)}M
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Sales per Game
-              </div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">
-                {salesPerGameData
-                  ?.find((d) => d.year === selectedYear)
-                  ?.salesPerGame.toFixed(2) ||
-                  (
-                    selectedYearData.globalSales / selectedYearData.gameCount
-                  ).toFixed(2)}
-                M
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Year-over-Year Growth
-              </div>
-              {selectedYearGrowthData ? (
+            {/* Year Stats */}
+            <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Total Games
+                </div>
                 <div className="text-xl font-bold text-gray-900 dark:text-white">
-                  {selectedYearGrowthData.gameCountGrowth.toFixed(1)}%
+                  {formatNumber(selectedYearData.gameCount)}
                 </div>
-              ) : (
-                <div className="text-xl font-bold text-gray-500 dark:text-gray-400">
-                  N/A
+              </div>
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Total Sales
                 </div>
-              )}
+                <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {selectedYearData.globalSales.toFixed(2)}M
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Sales per Game
+                </div>
+                <div className="text-xl font-bold text-gray-900 dark:text-white">
+                  {salesPerGameData
+                    ?.find((d) => d.year === selectedYear)
+                    ?.salesPerGame.toFixed(2) ||
+                    (
+                      selectedYearData.globalSales / selectedYearData.gameCount
+                    ).toFixed(2)}
+                  M
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Year-over-Year Growth
+                </div>
+                {selectedYearGrowthData ? (
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">
+                    {selectedYearGrowthData.gameCountGrowth.toFixed(1)}%
+                  </div>
+                ) : (
+                  <div className="text-xl font-bold text-gray-500 dark:text-gray-400">
+                    N/A
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {isLoadingYearGames ? (
-            <div className="flex justify-center py-8">
-              <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Top Genres */}
-              <div>
+            {isLoadingYearGames ? (
+              <div className="flex justify-center py-8">
+                <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Top Genres */}
+                <div>
+                  <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
+                    Top Genres in {selectedYear}
+                  </h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={getTopGenresForYear().slice(0, 5)}
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="genre" type="category" width={70} />
+                        <Tooltip
+                          formatter={(value) => formatNumber(Number(value))}
+                        />
+                        <Bar dataKey="count" name="Games" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Top Platforms */}
+                <div>
+                  <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
+                    Top Platforms in {selectedYear}
+                  </h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={getTopPlatformsForYear().slice(0, 5)}
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="platform" type="category" width={40} />
+                        <Tooltip
+                          formatter={(value) => formatNumber(Number(value))}
+                        />
+                        <Bar dataKey="count" name="Games" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Top Publishers in Year */}
+            {yearGames && yearGames.length > 0 && (
+              <div className="mt-6">
                 <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
-                  Top Genres in {selectedYear}
+                  Top Publishers in {selectedYear}
                 </h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={getTopGenresForYear().slice(0, 5)}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="genre" type="category" width={70} />
-                      <Tooltip
-                        formatter={(value) => formatNumber(Number(value))}
-                      />
-                      <Bar dataKey="count" name="Games" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                          Publisher
+                        </th>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
+                          Games
+                        </th>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
+                          Total Sales
+                        </th>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
+                          Sales per Game
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                      {getTopPublishersForYear()
+                        .slice(0, 10)
+                        .map((item, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                              {item.publisher}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-right text-gray-900 whitespace-nowrap dark:text-white">
+                              {formatNumber(item.count)}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-right text-gray-900 whitespace-nowrap dark:text-white">
+                              {item.sales.toFixed(2)}M
+                            </td>
+                            <td className="px-6 py-4 text-sm font-semibold text-right text-indigo-600 whitespace-nowrap dark:text-indigo-400">
+                              {(item.sales / item.count).toFixed(2)}M
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-
-              {/* Top Platforms */}
-              <div>
-                <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
-                  Top Platforms in {selectedYear}
-                </h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={getTopPlatformsForYear().slice(0, 5)}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="platform" type="category" width={40} />
-                      <Tooltip
-                        formatter={(value) => formatNumber(Number(value))}
-                      />
-                      <Bar dataKey="count" name="Games" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Top Publishers in Year */}
-          {yearGames && yearGames.length > 0 && (
-            <div className="mt-6">
-              <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
-                Top Publishers in {selectedYear}
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                        Publisher
-                      </th>
-                      <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
-                        Games
-                      </th>
-                      <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
-                        Total Sales
-                      </th>
-                      <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
-                        Sales per Game
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                    {getTopPublishersForYear()
-                      .slice(0, 10)
-                      .map((item, index) => (
-                        <tr
-                          key={index}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                            {item.publisher}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-right text-gray-900 whitespace-nowrap dark:text-white">
-                            {formatNumber(item.count)}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-right text-gray-900 whitespace-nowrap dark:text-white">
-                            {item.sales.toFixed(2)}M
-                          </td>
-                          <td className="px-6 py-4 text-sm font-semibold text-right text-indigo-600 whitespace-nowrap dark:text-indigo-400">
-                            {(item.sales / item.count).toFixed(2)}M
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      )}
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Chart - Games Released Over Time */}
       <div className="grid grid-cols-1 gap-6 mb-6">
@@ -651,6 +657,7 @@ const GamesReleasedAnalysis = () => {
                     dataKey="year"
                     height={30}
                     stroke="#8884d8"
+                    
                     startIndex={0}
                     endIndex={filteredTimelineData.length - 1}
                   />
