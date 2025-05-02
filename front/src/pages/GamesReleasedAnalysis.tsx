@@ -596,8 +596,18 @@ const GamesReleasedAnalysis = () => {
                     stroke="#8884d8"
                     fillOpacity={0.3}
                     activeDot={{
-                      onClick: (data) => setSelectedYear(data.payload.year),
-                      r: 6,
+                      onClick: (data, index) => {
+                        console.log("Area chart clicked:", data);
+                        setSelectedYear(data.payload.year);
+                      },
+                      r: 8,
+                      style: { cursor: "pointer" },
+                    }}
+                    onClick={(data) => {
+                      console.log("Area segment clicked:", data);
+                      if (data && data.activePayload && data.activePayload[0]) {
+                        setSelectedYear(data.activePayload[0].payload.year);
+                      }
                     }}
                   />
                   <Line
@@ -608,8 +618,33 @@ const GamesReleasedAnalysis = () => {
                     stroke="#82ca9d"
                     strokeWidth={2}
                     dot={{
-                      r: 4,
-                      onClick: (data) => setSelectedYear(data.payload.year),
+                      r: 6,
+                      onClick: (data) => {
+                        console.log("Line chart dot clicked:", data);
+                        setSelectedYear(data.payload.year);
+                      },
+                      style: { cursor: "pointer" },
+                    }}
+                    activeDot={{
+                      r: 8,
+                      onClick: (event, data) => {
+                        console.log(
+                          "Line chart activeDot clicked:",
+                          event,
+                          data
+                        );
+                        // Access the year from the data parameter instead
+                        if (data && data.payload) {
+                          setSelectedYear(data.payload.year);
+                        }
+                      },
+                      style: { cursor: "pointer" },
+                    }}
+                    onClick={(data) => {
+                      console.log("Line segment clicked:", data);
+                      if (data && data.activePayload && data.activePayload[0]) {
+                        setSelectedYear(data.activePayload[0].payload.year);
+                      }
                     }}
                   />
                   <Brush
@@ -681,7 +716,12 @@ const GamesReleasedAnalysis = () => {
                     dataKey="GameCountGrowth"
                     name="Games Growth %"
                     fill="#8884d8"
-                    onClick={(data) => setSelectedYear(data.Year)}
+                    onClick={(data) => {
+                      console.log("Bar chart clicked:", data);
+                      setSelectedYear(data.Year || data.year);
+                    }}
+                    cursor="pointer"
+                    style={{ cursor: "pointer" }}
                   />
                   <Line
                     type="monotone"
@@ -690,7 +730,24 @@ const GamesReleasedAnalysis = () => {
                     stroke="#ff7300"
                     strokeWidth={2}
                     dot={{
-                      onClick: (data) => setSelectedYear(data.payload.Year),
+                      onClick: (data) => {
+                        console.log("Dot clicked:", data);
+                        setSelectedYear(data.payload.Year || data.payload.year);
+                      },
+                      r: 5,
+                      style: { cursor: "pointer" },
+                    }}
+                    activeDot={{
+                      r: 7,
+                      onClick: (event, data) => {
+                        console.log("Active dot clicked:", event, data);
+                        if (data && data.payload) {
+                          setSelectedYear(
+                            data.payload.Year || data.payload.year
+                          );
+                        }
+                      },
+                      style: { cursor: "pointer" },
                     }}
                   />
                 </ComposedChart>
@@ -749,6 +806,18 @@ const GamesReleasedAnalysis = () => {
                     strokeWidth={2}
                     dot={{
                       onClick: (data) => setSelectedYear(data.payload.year),
+                      r: 5,
+                      style: { cursor: "pointer" },
+                    }}
+                    activeDot={{
+                      r: 8,
+                      onClick: (event, data) => {
+                        console.log("Active dot clicked:", event, data);
+                        if (data && data.payload) {
+                          setSelectedYear(data.payload.year);
+                        }
+                      },
+                      style: { cursor: "pointer" },
                     }}
                   />
                 </LineChart>
