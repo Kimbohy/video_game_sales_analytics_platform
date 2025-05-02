@@ -416,4 +416,94 @@ public class DatabaseService
             TimelineData = timelineData
         };
     }
+
+    public async Task<IEnumerable<object>> GetTimelineGrowthDataAsync()
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        return await connection.QueryAsync(
+            @"WITH YearData AS (
+                SELECT 
+                    YEAR(release_date) as year,
+                    SUM(total_sales) as globalSales,
+                    COUNT(*) as gameCount
+                FROM vgchartz_2024
+                WHERE release_date IS NOT NULL
+                GROUP BY YEAR(release_date)
+            ),
+            ConsecutiveYears AS (
+                SELECT 
+                    current.year AS Year,
+                    current.gameCount AS GameCount,
+                    current.globalSales AS GlobalSales,
+                    prev.gameCount AS PrevGameCount,
+                    prev.globalSales AS PrevGlobalSales,
+                    prev1.gameCount AS Prev1GameCount,
+                    prev2.gameCount AS Prev2GameCount,
+                    next1.gameCount AS Next1GameCount,
+                    next2.gameCount AS Next2GameCount
+                FROM YearData current
+                LEFT JOIN YearData prev ON current.year = prev.year + 1
+                LEFT JOIN YearData prev1 ON current.year = prev1.year + 1
+                LEFT JOIN YearData prev2 ON current.year = prev2.year + 2
+                LEFT JOIN YearData next1 ON current.year = next1.year - 1
+                LEFT JOIN YearData next2 ON current.year = next2.year - 2
+            )
+            SELECT 
+                Year,
+                GameCount,
+                GlobalSales,
+                CASE 
+                    WHEN PrevGameCount IS NULL OR PrevGameCount = 0 THEN 0 
+                    ELSE ROUND((GameCount - PrevGameCount) / PrevGameCount * 100, 2) 
+                END AS GameCountGrowth,
+                CASE 
+                    WHEN PrevGlobalSales IS NULL OR PrevGlobalSales = 0 THEN 0 
+                    ELSE ROUND((GlobalSales - PrevGlobalSales) / PrevGlobalSales * 100, 2) 
+                END AS SalesGrowth,
+                CASE WHEN 
+                    GameCount > Prev1GameCount AND
+                    GameCount > Prev2GameCount AND
+                    GameCount > Next1GameCount AND
+                    GameCount > Next2GameCount AND
+                    Prev1GameCount IS NOT NULL AND
+                    Prev2GameCount IS NOT NULL AND
+                    Next1GameCount IS NOT NULL AND
+                    Next2GameCount IS NOT NULL
+                THEN true ELSE false END AS IsPeak,
+                CASE WHEN 
+                    GameCount < Prev1GameCount AND
+                    GameCount < Prev2GameCount AND
+                    GameCount < Next1GameCount AND
+                    GameCount < Next2GameCount AND
+                    Prev1GameCount IS NOT NULL AND
+                    Prev2GameCount IS NOT NULL AND
+                    Next1GameCount IS NOT NULL AND
+                    Next2GameCount IS NOT NULL
+                THEN true ELSE false END AS IsValley,
+                CASE WHEN 
+                    PrevGameCount IS NOT NULL AND PrevGameCount > 0 AND
+                    ABS((GameCount - PrevGameCount) / PrevGameCount * 100) > 30
+                THEN true ELSE false END AS IsSignificantChange,
+                CASE WHEN 
+                    PrevGameCount IS NULL OR PrevGameCount = 0 THEN 'stable'
+                    WHEN (GameCount - PrevGameCount) / PrevGameCount * 100 > 0
+                    THEN 'growth' ELSE 'decline' END AS ChangeDirection
+            FROM ConsecutiveYears
+            ORDER BY Year");
+    }
+
+    public async Task<IEnumerable<object>> GetSalesPerGameByYearAsync()
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        return await connection.QueryAsync(
+            @"SELECT 
+                YEAR(release_date) as year,
+                SUM(total_sales) as globalSales,
+                COUNT(*) as gameCount,
+                ROUND(SUM(total_sales) / COUNT(*), 2) as salesPerGame
+            FROM vgchartz_2024
+            WHERE release_date IS NOT NULL
+            GROUP BY YEAR(release_date)
+            ORDER BY YEAR(release_date)");
+    }
 }

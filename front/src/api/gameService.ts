@@ -60,6 +60,25 @@ export interface FilteredData {
   timelineData: YearSales[];
 }
 
+export interface TimelineGrowthData {
+  Year: number;
+  GameCount: number;
+  GlobalSales: number;
+  GameCountGrowth: number;
+  SalesGrowth: number;
+  IsPeak: number;
+  IsValley: number;
+  IsSignificantChange: number;
+  ChangeDirection: string;
+}
+
+export interface SalesPerGameData {
+  year: number;
+  globalSales: number;
+  gameCount: number;
+  salesPerGame: number;
+}
+
 export const gameService = {
   getStats: () =>
     axios.get<VGStatsData>(`${API_BASE_URL}/stats`).then((res) => res.data),
@@ -107,6 +126,16 @@ export const gameService = {
   getTimelineData: () =>
     axios
       .get<YearSales[]>(`${API_BASE_URL}/stats/timeline`)
+      .then((res) => res.data),
+
+  getTimelineGrowthData: () =>
+    axios
+      .get<TimelineGrowthData[]>(`${API_BASE_URL}/stats/timeline-growth`)
+      .then((res) => res.data),
+
+  getSalesPerGameData: () =>
+    axios
+      .get<SalesPerGameData[]>(`${API_BASE_URL}/stats/sales-per-game`)
       .then((res) => res.data),
 
   getGenreDistribution: () =>

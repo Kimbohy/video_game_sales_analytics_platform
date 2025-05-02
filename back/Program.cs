@@ -133,6 +133,20 @@ app.MapGet("/api/stats/genre-distribution", async (DatabaseService db) =>
 .WithName("GetGenreDistribution")
 .WithOpenApi();
 
+app.MapGet("/api/stats/timeline-growth", async (DatabaseService db) =>
+{
+    return await db.GetTimelineGrowthDataAsync();
+})
+.WithName("GetTimelineGrowthData")
+.WithOpenApi();
+
+app.MapGet("/api/stats/sales-per-game", async (DatabaseService db) =>
+{
+    return await db.GetSalesPerGameByYearAsync();
+})
+.WithName("GetSalesPerGameByYear")
+.WithOpenApi();
+
 // Individual data endpoints
 app.MapGet("/api/console/{console}", async (DatabaseService db, string console) =>
 {
