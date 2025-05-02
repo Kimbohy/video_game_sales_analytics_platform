@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { gameService } from "../api/gameService";
 import { motion } from "framer-motion";
@@ -25,6 +25,21 @@ import {
 const GamesReleasedAnalysis = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>("all");
+  const yearAnalysisRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedYear && yearAnalysisRef.current) {
+      // Add a small delay to ensure the component is rendered
+      setTimeout(() => {
+        // Scroll with offset to account for the nav bar height
+        const yOffset = -80; // Adjust this value based on your nav bar height
+        const element = yearAnalysisRef.current;
+        const y =
+          element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }, 100);
+    }
+  }, [selectedYear]);
 
   // Fetch timeline data
   const { data: timelineData, isLoading: isLoadingTimeline } = useQuery({
@@ -332,6 +347,7 @@ const GamesReleasedAnalysis = () => {
       {/* Selected Year Detail */}
       {selectedYear && selectedYearData && (
         <motion.div
+          ref={yearAnalysisRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -600,7 +616,7 @@ const GamesReleasedAnalysis = () => {
                     dataKey="year"
                     height={30}
                     stroke="#8884d8"
-                    startIndex={Math.max(0, filteredTimelineData.length - 15)}
+                    startIndex={0}
                     endIndex={filteredTimelineData.length - 1}
                   />
                 </ComposedChart>
