@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface GuideStep {
+export interface GuideStep {
   id: string;
   title: string;
   description: string;
@@ -11,7 +11,17 @@ interface GuideStep {
   };
 }
 
-export const GamesReleasedGuide = () => {
+interface GuideComponentProps {
+  guideSteps: GuideStep[];
+  storageKey: string;
+  onComplete?: () => void;
+}
+
+export const GuideComponent = ({
+  guideSteps,
+  storageKey,
+  onComplete,
+}: GuideComponentProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [hasCompletedGuide, setHasCompletedGuide] = useState(false);
@@ -28,90 +38,6 @@ export const GamesReleasedGuide = () => {
   // Store original body overflow style
   const [originalBodyOverflow, setOriginalBodyOverflow] = useState("");
 
-  // Guide steps with instructions for using the Games Released Analysis page
-  const guideSteps: GuideStep[] = [
-    {
-      id: "welcome",
-      title: "Welcome to Games Released Analysis",
-      description:
-        "This page helps you explore the history of video game releases, track industry growth trends, and analyze sales performance by year. Let's see how it works!",
-      position: {
-        placement: "top",
-        targetElement: "body",
-      },
-    },
-    {
-      id: "time-range",
-      title: "Time Range Selection",
-      description:
-        "Use these buttons to select different time periods for your analysis. You can view data for all time or focus on the last 10, 20, or 30 years.",
-      position: {
-        placement: "bottom",
-        targetElement: "#time-range-selector",
-      },
-    },
-    {
-      id: "timeline-chart",
-      title: "Games Released Timeline",
-      description:
-        "This chart shows the number of games released (blue area) and total sales (green line) over time. Click on any year to see detailed information about games released that year.",
-      position: {
-        placement: "top",
-        targetElement: ".h-96",
-      },
-    },
-    {
-      id: "brush-tool",
-      title: "Timeline Navigation",
-      description:
-        "Use this brush tool to zoom in on specific time periods. Drag the handles to adjust the visible range and focus on particular years.",
-      position: {
-        placement: "bottom",
-        targetElement: ".recharts-brush",
-      },
-    },
-    {
-      id: "year-analysis",
-      title: "Year Analysis",
-      description:
-        "When you click a year on the timeline, this section appears with detailed statistics, including game count, total sales, and year-over-year growth.",
-      position: {
-        placement: "top",
-        targetElement: ".mb-6 > .grid-cols-1 > .md\\:grid-cols-4",
-      },
-    },
-    {
-      id: "top-genres",
-      title: "Top Genres Chart",
-      description:
-        "This chart shows the most popular genres for the selected year. You can see which game types dominated the market during that period.",
-      position: {
-        placement: "left",
-        targetElement: ".md\\:grid-cols-2 > div:first-child .h-64",
-      },
-    },
-    {
-      id: "top-platforms",
-      title: "Top Platforms Chart",
-      description:
-        "This chart displays the gaming platforms that had the most releases in the selected year. You can track the rise and fall of different consoles over time.",
-      position: {
-        placement: "right",
-        targetElement: ".md\\:grid-cols-2 > div:last-child .h-64",
-      },
-    },
-    {
-      id: "publishers-table",
-      title: "Top Publishers Table",
-      description:
-        "This table lists the most active publishers for the selected year, showing their game count, total sales, and average sales per game.",
-      position: {
-        placement: "bottom",
-        targetElement: "table.min-w-full",
-      },
-    },
-  ];
-
   // Check if the specified element exists in the DOM
   const checkElementExists = (selector: string): boolean => {
     if (selector === "body") return true;
@@ -123,51 +49,20 @@ export const GamesReleasedGuide = () => {
 
   // Set up a DOM observer to detect when elements are added or removed
   useEffect(() => {
-    const updateAvailableSteps = () => {
-      const steps = guideSteps.filter((step) =>
-        checkElementExists(step.position.targetElement)
-      );
+    const steps = guideSteps.filter((step) =>
+      checkElementExists(step.position.targetElement)
+    );
+    setAvailableSteps(steps);
 
-      setAvailableSteps(steps);
-
-      // If we're currently on a step that disappeared, move to the next available step
-      if (
-        steps.length > 0 &&
-        !checkElementExists(
-          availableSteps[currentStepIndex]?.position?.targetElement
-        )
-      ) {
-        // Find the next available step
-        const nextStepIndex = Math.min(currentStepIndex, steps.length - 1);
-        setCurrentStepIndex(nextStepIndex);
-      }
-    };
-
-    // Initial check
-    updateAvailableSteps();
-
-    // Set up mutation observer to detect DOM changes
-    const observer = new MutationObserver((mutations) => {
-      updateAvailableSteps();
-    });
-
-    // Observe the entire body for changes
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: false,
-      characterData: false,
-    });
-
-    // Clean up observer when component unmounts
-    return () => {
-      observer.disconnect();
-    };
-  }, [currentStepIndex]); // Include currentStepIndex as a dependency
+    // Reset current step index when available steps change
+    if (steps.length > 0) {
+      setCurrentStepIndex(0);
+    }
+  }, [guideSteps]);
 
   // Check if the user has seen the guide before
   useEffect(() => {
-    const guideCompleted = localStorage.getItem("gamesReleasedGuideCompleted");
+    const guideCompleted = localStorage.getItem(storageKey);
     if (guideCompleted === "true") {
       setHasCompletedGuide(true);
       setIsVisible(false);
@@ -175,7 +70,7 @@ export const GamesReleasedGuide = () => {
       setHasCompletedGuide(false);
       setIsVisible(true);
     }
-  }, []);
+  }, [storageKey]);
 
   // Block scrolling when guide is active
   useEffect(() => {
@@ -399,15 +294,10 @@ export const GamesReleasedGuide = () => {
   };
 
   const completeGuide = () => {
-    localStorage.setItem("gamesReleasedGuideCompleted", "true");
+    localStorage.setItem(storageKey, "true");
     setHasCompletedGuide(true);
     setIsVisible(false);
-
-    // Scroll back to the top of the page
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    if (onComplete) onComplete();
   };
 
   const resetGuide = () => {

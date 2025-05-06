@@ -61,7 +61,7 @@ export interface FilteredData {
 }
 
 export interface TimelineGrowthData {
-  Year: number;
+  year: number;
   GameCount: number;
   GlobalSales: number;
   GameCountGrowth: number;

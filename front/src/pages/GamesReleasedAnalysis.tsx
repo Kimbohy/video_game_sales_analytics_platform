@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { gameService } from "../api/gameService";
 import { motion, AnimatePresence } from "framer-motion";
-import { GamesReleasedGuide } from "../components/layout/GamesReleasedGuide";
+import { GamesReleasedGuide } from "../components/layout/guides/GamesReleasedGuide";
 import {
   AreaChart,
   Area,
@@ -35,9 +35,11 @@ const GamesReleasedAnalysis = () => {
         // Scroll with offset to account for the nav bar height
         const yOffset = -80; // Adjust this value based on your nav bar height
         const element = yearAnalysisRef.current;
-        const y =
-          element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: "smooth" });
+        if (element) {
+          const y =
+            element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
       }, 100);
     }
   }, [selectedYear]);
@@ -299,7 +301,10 @@ const GamesReleasedAnalysis = () => {
       <GamesReleasedGuide />
 
       {/* Time Range Selector */}
-      <div className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800" id="time-range-selector">
+      <div
+        className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
+        id="time-range-selector"
+      >
         <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Select Time Range
         </h2>
@@ -408,7 +413,7 @@ const GamesReleasedAnalysis = () => {
                 </div>
                 {selectedYearGrowthData ? (
                   <div className="text-xl font-bold text-gray-900 dark:text-white">
-                    {selectedYearGrowthData.gameCountGrowth.toFixed(1)}%
+                    {selectedYearGrowthData.GameCountGrowth.toFixed(1)}%
                   </div>
                 ) : (
                   <div className="text-xl font-bold text-gray-500 dark:text-gray-400">
@@ -657,7 +662,6 @@ const GamesReleasedAnalysis = () => {
                     dataKey="year"
                     height={30}
                     stroke="#8884d8"
-                    
                     startIndex={0}
                     endIndex={filteredTimelineData.length - 1}
                   />
@@ -812,7 +816,11 @@ const GamesReleasedAnalysis = () => {
                     stroke="#82ca9d"
                     strokeWidth={2}
                     dot={{
-                      onClick: (data) => setSelectedYear(data.payload.year),
+                      onClick: (_event: any, data: any) => {
+                        if (data && data.year !== undefined) {
+                          setSelectedYear(data.year);
+                        }
+                      },
                       r: 5,
                       style: { cursor: "pointer" },
                     }}

@@ -5,7 +5,7 @@ import { SalesDistributionChart } from "../components/charts/SalesDistributionCh
 import { GenreDistributionChart } from "../components/charts/GenreDistributionChart";
 import { TimelineChart } from "../components/charts/TimelineChart";
 import { GamesList } from "../components/layout/GamesList";
-import { UserGuide } from "../components/layout/UserGuide";
+import { UserGuide } from "../components/layout/guides/UserGuide";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const SalesAnalysis = () => {
