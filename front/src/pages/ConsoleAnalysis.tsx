@@ -35,7 +35,7 @@ const ConsoleAnalysis = () => {
   });
 
   // Fetch data for a specific console
-  const { data: consoleGames, isLoading: isLoadingConsoleGames } = useQuery({
+  const { isLoading: isLoadingConsoleGames } = useQuery({
     queryKey: ["consoleGames", selectedConsole],
     queryFn: () => gameService.getGamesByConsole(selectedConsole!),
     enabled: !!selectedConsole,
