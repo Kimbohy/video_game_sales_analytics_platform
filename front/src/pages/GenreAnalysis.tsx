@@ -24,6 +24,7 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
+import { GenreAnalysisGuide } from "../components/layout/guides/GenreAnalysisGuide";
 
 const GenreAnalysis = () => {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
@@ -279,6 +280,9 @@ const GenreAnalysis = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Add the GenreAnalysisGuide component */}
+      <GenreAnalysisGuide />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

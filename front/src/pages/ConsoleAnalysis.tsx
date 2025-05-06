@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  gameService,
-  PlatformSales,
-  ConsoleEfficiencyData,
-  ConsoleTopGenre,
-  ConsoleGroupData,
-} from "../api/gameService";
+import { gameService, PlatformSales } from "../api/gameService";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -23,8 +17,8 @@ import {
   ScatterChart,
   Scatter,
   ZAxis,
-  ReferenceArea,
 } from "recharts";
+import { ConsoleAnalysisGuide } from "../components/layout/guides/ConsoleAnalysisGuide";
 
 const ConsoleAnalysis = () => {
   const [selectedConsole, setSelectedConsole] = useState<string | null>(null);
@@ -56,11 +50,10 @@ const ConsoleAnalysis = () => {
     });
 
   // Fetch console groups data from SQL
-  const { data: consoleGroupsData, isLoading: isLoadingConsoleGroups } =
-    useQuery({
-      queryKey: ["consoleGroups"],
-      queryFn: () => gameService.getConsoleGroups(),
-    });
+  const { data: consoleGroupsData, isLoading: _ } = useQuery({
+    queryKey: ["consoleGroups"],
+    queryFn: () => gameService.getConsoleGroups(),
+  });
 
   // Fetch sales efficiency data from SQL
   const { data: salesEfficiencyData, isLoading: isLoadingSalesEfficiency } =
@@ -167,6 +160,9 @@ const ConsoleAnalysis = () => {
 
   return (
     <div className="mx-auto max-w-7xl">
+      {/* Add the ConsoleAnalysisGuide component */}
+      <ConsoleAnalysisGuide />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -308,7 +304,7 @@ const ConsoleAnalysis = () => {
                         dataKey="value"
                       >
                         {getRegionalSalesData(selectedConsoleData).map(
-                          (entry, index) => (
+                          (_, index) => (
                             <Cell
                               key={`cell-${index}`}
                               fill={COLORS[index % COLORS.length]}
@@ -444,14 +440,12 @@ const ConsoleAnalysis = () => {
                     nameKey="platform"
                     onClick={(data) => setSelectedConsole(data.platform)}
                   >
-                    {platformSalesPercentages
-                      .slice(0, 10)
-                      .map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
+                    {platformSalesPercentages.slice(0, 10).map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
                   </Pie>
                   <Tooltip
                     formatter={(value) => `${Number(value).toFixed(2)}M`}
