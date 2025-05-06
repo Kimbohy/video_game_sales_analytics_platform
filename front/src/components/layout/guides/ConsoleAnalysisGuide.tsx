@@ -55,16 +55,16 @@ export const ConsoleAnalysisGuide = () => {
           ".p-4.mb-6.bg-white.rounded-lg.shadow-md.dark\\:bg-gray-800 .h-96",
       },
     },
-    {
-      id: "efficiency-legend",
-      title: "Console Family Legend",
-      description:
-        "This color-coded legend helps you identify different console families in the scatter plot (Nintendo in blue, PlayStation in orange, Xbox in green, etc.).",
-      position: {
-        placement: "top",
-        targetElement: ".recharts-legend-wrapper",
-      },
-    },
+    // {
+    //   id: "efficiency-legend",
+    //   title: "Console Family Legend",
+    //   description:
+    //     "This color-coded legend helps you identify different console families in the scatter plot (Nintendo in blue, PlayStation in orange, Xbox in green, etc.).",
+    //   position: {
+    //     placement: "top",
+    //     targetElement: ".recharts-legend-wrapper",
+    //   },
+    // },
     {
       id: "top-platforms-table",
       title: "Top Platforms Table",
