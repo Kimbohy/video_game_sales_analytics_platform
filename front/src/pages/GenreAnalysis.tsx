@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { gameService, GenreSales } from "../api/gameService";
 import { motion } from "framer-motion";
@@ -31,6 +31,8 @@ const GenreAnalysis = () => {
   const [compareMode, setCompareMode] = useState(false);
   const [comparedGenres, setComparedGenres] = useState<string[]>([]);
   const selectedGenreRef = useRef<HTMLDivElement | null>(null);
+  const [showOtherGenres, setShowOtherGenres] = useState(false);
+  const [otherGenres, setOtherGenres] = useState<GenreSales[]>([]);
 
   useEffect(() => {
     if (selectedGenre && selectedGenreRef.current) {
@@ -293,6 +295,47 @@ const GenreAnalysis = () => {
   };
 
   const radarData = prepareRadarData(comparisonData || []);
+
+  // Prepare data for the pie chart with memoization to avoid re-renders
+  const { pieChartData, calculatedOtherGenres } = useMemo(() => {
+    if (!genreData) return { pieChartData: [], calculatedOtherGenres: [] };
+
+    const sortedData = [...genreData].sort((a, b) => b.gameCount - a.gameCount);
+
+    // Display top 12 genres and group the rest as "Other"
+    const threshold = 11;
+    if (sortedData.length <= threshold) {
+      return { pieChartData: sortedData, calculatedOtherGenres: [] };
+    }
+
+    const topGenres = sortedData.slice(0, threshold);
+    const otherGenres = sortedData.slice(threshold);
+
+    const otherCount = otherGenres.reduce(
+      (sum, genre) => sum + genre.gameCount,
+      0
+    );
+
+    return {
+      pieChartData: [
+        ...topGenres,
+        {
+          genre: "Other",
+          gameCount: otherCount,
+          totalSales: otherGenres.reduce(
+            (sum, genre) => sum + genre.totalSales,
+            0
+          ),
+        },
+      ],
+      calculatedOtherGenres: otherGenres,
+    };
+  }, [genreData]);
+
+  // Update otherGenres state when calculatedOtherGenres changes
+  useEffect(() => {
+    setOtherGenres(calculatedOtherGenres);
+  }, [calculatedOtherGenres]);
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -666,9 +709,7 @@ const GenreAnalysis = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={genreData?.sort(
-                          (a, b) => b.gameCount - a.gameCount
-                        )}
+                        data={pieChartData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -679,12 +720,19 @@ const GenreAnalysis = () => {
                         label={({ genre, percent }) =>
                           `${genre}: ${(percent * 100).toFixed(1)}%`
                         }
-                        onClick={(data) => setSelectedGenre(data.genre)}
+                        onClick={(data) => {
+                          if (data.genre === "Other") {
+                            setShowOtherGenres(true);
+                          } else {
+                            setSelectedGenre(data.genre);
+                          }
+                        }}
                       >
-                        {genreData?.map((entry, index) => (
+                        {pieChartData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
+                            opacity={entry.genre === "Other" ? 0.7 : 1}
                           />
                         ))}
                       </Pie>
@@ -696,6 +744,10 @@ const GenreAnalysis = () => {
                   </ResponsiveContainer>
                 </div>
               )}
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Top 12 genres shown; smaller genres grouped as "Other". Click on
+                "Other" to see all smaller genres.
+              </p>
             </motion.div>
           </div>
 
@@ -962,6 +1014,93 @@ const GenreAnalysis = () => {
             </motion.div>
           )}
         </>
+      )}
+
+      {/* Other Genres Modal */}
+      {showOtherGenres && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-6 mx-4 bg-white rounded-lg shadow-xl dark:bg-gray-800 w-full max-w-4xl max-h-[80vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Other Genres ({otherGenres.length})
+              </h2>
+              <button
+                onClick={() => setShowOtherGenres(false)}
+                className="p-1 text-gray-600 transition-colors rounded-full hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                      Genre
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
+                      Game Count
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
+                      Sales (M)
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-300">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                  {otherGenres
+                    .sort((a, b) => b.gameCount - a.gameCount)
+                    .map((genre, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                          {genre.genre}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right text-gray-500 dark:text-gray-300">
+                          {formatNumber(genre.gameCount)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right text-gray-500 dark:text-gray-300">
+                          {genre.totalSales.toFixed(2)}M
+                        </td>
+                        <td className="px-6 py-4 text-sm text-center">
+                          <button
+                            onClick={() => {
+                              setSelectedGenre(genre.genre);
+                              setShowOtherGenres(false);
+                            }}
+                            className="px-3 py-1 text-xs text-white bg-indigo-600 rounded-full hover:bg-indigo-700"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
