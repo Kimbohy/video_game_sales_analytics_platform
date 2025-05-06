@@ -62,7 +62,7 @@ const AppLayout = () => {
               }
               end
             >
-              Dashboard
+              Sales Analysis
             </NavLink>
             <NavLink
               to="/games-released"

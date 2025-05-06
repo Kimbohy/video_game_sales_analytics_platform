@@ -20,7 +20,6 @@ type TabType = "overview" | "sales" | "details";
 
 export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [isExiting, setIsExiting] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   // If clicked outside modal content, close the modal
@@ -32,7 +31,6 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
 
   // Enhance the close functionality to ensure scroll is restored
   const handleClose = () => {
-    setIsExiting(true);
     // Immediately unlock scroll to ensure it's restored
     scrollLockManager.forceUnlock();
     // Small delay before actually closing to let animation play
@@ -92,7 +90,7 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
           animate="visible"
           exit="exit"
           className="relative w-full max-w-3xl overflow-hidden bg-white shadow-2xl dark:bg-gray-800 rounded-2xl"
-          style={{ height: "min(85vh, 600px)" }}
+          style={{ maxHeight: "85vh" }}
         >
           {/* Close button */}
           <motion.button
@@ -187,12 +185,16 @@ export const GameDetailsModal = ({ game, onClose }: GameDetailsModalProps) => {
             ))}
           </div>
 
-          {/* Content Area - Fixed height with scrolling */}
-          <div className="p-4 h-[calc(100%-120px)] overflow-y-auto">
+          {/* Content Area - Scrollable with auto height */}
+          <div className="p-4 max-h-[60vh] overflow-y-auto">
             <AnimatePresence mode="wait">
-              {activeTab === "overview" && <OverviewTab game={game} />}
-              {activeTab === "sales" && <SalesTab game={game} />}
-              {activeTab === "details" && <DetailsTab game={game} />}
+              {activeTab === "overview" && (
+                <OverviewTab game={game} key="overview" />
+              )}
+              {activeTab === "sales" && <SalesTab game={game} key="sales" />}
+              {activeTab === "details" && (
+                <DetailsTab game={game} key="details" />
+              )}
             </AnimatePresence>
           </div>
         </motion.div>
