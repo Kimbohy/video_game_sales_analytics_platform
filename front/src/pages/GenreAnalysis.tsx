@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { gameService, GenreSales } from "../api/gameService";
 import { motion } from "framer-motion";
@@ -30,6 +30,22 @@ const GenreAnalysis = () => {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [comparedGenres, setComparedGenres] = useState<string[]>([]);
+  const selectedGenreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (selectedGenre && selectedGenreRef.current) {
+      // Increase the offset to ensure it scrolls further up
+      const yOffset = -90;
+      const element = selectedGenreRef.current;
+      const y =
+        element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+      window.scrollTo({
+        top: y,
+        behavior: "smooth",
+      });
+    }
+  }, [selectedGenre]);
 
   // Fetch genre distribution data
   const { data: genreData, isLoading: isLoadingGenres } = useQuery({
@@ -279,7 +295,7 @@ const GenreAnalysis = () => {
   const radarData = prepareRadarData(comparisonData || []);
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl">
       {/* Add the GenreAnalysisGuide component */}
       <GenreAnalysisGuide />
 
@@ -289,7 +305,7 @@ const GenreAnalysis = () => {
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
           Genre Analysis
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
@@ -299,9 +315,9 @@ const GenreAnalysis = () => {
       </motion.div>
 
       {/* Genre Comparison Toggle */}
-      <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+      <div className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-0">
+          <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white sm:mb-0">
             Analysis Mode
           </h2>
           <div className="flex items-center">
@@ -332,7 +348,7 @@ const GenreAnalysis = () => {
         </div>
         {compareMode && (
           <div className="mt-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
               Select up to 5 genres to compare:
             </p>
             <div className="flex flex-wrap gap-2">
@@ -365,14 +381,14 @@ const GenreAnalysis = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6"
+                className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
               >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
                   Genre Comparison
                 </h2>
                 {isLoadingComparison ? (
                   <div className="flex justify-center py-8">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                   </div>
                 ) : (
                   <div className="h-96">
@@ -402,7 +418,7 @@ const GenreAnalysis = () => {
                     </ResponsiveContainer>
                   </div>
                 )}
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                   Radar chart compares genres across multiple metrics
                   (normalized to percentage).
                 </p>
@@ -413,14 +429,14 @@ const GenreAnalysis = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6"
+                className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
               >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
                   Total Sales Comparison
                 </h2>
                 {isLoadingComparison ? (
                   <div className="flex justify-center py-8">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                   </div>
                 ) : (
                   <div className="h-80">
@@ -452,14 +468,14 @@ const GenreAnalysis = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6"
+                className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
               >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
                   Regional Sales Distribution
                 </h2>
                 {isLoadingComparison ? (
                   <div className="flex justify-center py-8">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                   </div>
                 ) : (
                   <div className="h-80">
@@ -511,14 +527,14 @@ const GenreAnalysis = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+                className="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800"
               >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
                   Game Count & Sales Per Game
                 </h2>
                 {isLoadingComparison ? (
                   <div className="flex justify-center py-8">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                   </div>
                 ) : (
                   <div className="h-80">
@@ -563,7 +579,7 @@ const GenreAnalysis = () => {
               animate={{ opacity: 1 }}
               className="p-8 text-center bg-white rounded-lg shadow-md dark:bg-gray-800"
             >
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
                 Select Genres to Compare
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
@@ -579,20 +595,20 @@ const GenreAnalysis = () => {
       {!compareMode && (
         <>
           {/* Genre Distribution Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
             {/* Genre Sales Distribution */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+              className="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800"
             >
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
                 Sales by Genre
               </h2>
               {isLoadingGenres ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                 </div>
               ) : (
                 <div className="h-96">
@@ -626,7 +642,7 @@ const GenreAnalysis = () => {
                   </ResponsiveContainer>
                 </div>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Click on any bar to see genre details
               </p>
             </motion.div>
@@ -636,14 +652,14 @@ const GenreAnalysis = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+              className="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800"
             >
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
                 Game Count by Genre
               </h2>
               {isLoadingGenres ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                 </div>
               ) : (
                 <div className="h-96">
@@ -684,18 +700,18 @@ const GenreAnalysis = () => {
           </div>
 
           {/* Sales Efficiency by Genre */}
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+            className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
               Sales per Game by Genre
             </h2>
             {isLoadingGenres ? (
               <div className="flex justify-center py-8">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
               </div>
             ) : (
               <div className="h-80">
@@ -727,35 +743,36 @@ const GenreAnalysis = () => {
                 </ResponsiveContainer>
               </div>
             )}
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               Higher values indicate genres with greater commercial success per
               title
             </p>
-          </motion.div>
+          </motion.div> */}
 
           {/* Selected Genre Detail */}
           {selectedGenre && selectedGenreData && (
             <motion.div
+              ref={selectedGenreRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+              className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {selectedGenre} - Genre Analysis
                 </h2>
                 <button
                   onClick={() => setSelectedGenre(null)}
-                  className="px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                  className="px-2 py-1 text-sm text-gray-600 rounded-md dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   Clear Selection
                 </button>
               </div>
 
               {/* Genre Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     Total Games
                   </div>
@@ -763,7 +780,7 @@ const GenreAnalysis = () => {
                     {formatNumber(selectedGenreData.gameCount)}
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     Global Sales
                   </div>
@@ -771,7 +788,7 @@ const GenreAnalysis = () => {
                     {selectedGenreData.totalSales.toFixed(2)}M
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     Sales per Game
                   </div>
@@ -782,7 +799,7 @@ const GenreAnalysis = () => {
                     M
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     Avg Critic Score
                   </div>
@@ -794,13 +811,13 @@ const GenreAnalysis = () => {
 
               {isLoadingGenreGames ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Platform Distribution */}
                   <div>
-                    <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">
+                    <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
                       Top Platforms
                     </h3>
                     <div className="h-64">
@@ -836,7 +853,7 @@ const GenreAnalysis = () => {
 
                   {/* Publishers */}
                   <div>
-                    <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">
+                    <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
                       Top Publishers
                     </h3>
                     <div className="h-64">
@@ -872,31 +889,31 @@ const GenreAnalysis = () => {
               {/* Top Games in Genre */}
               {genreGames && genreGames.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">
+                  <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
                     Top {selectedGenre} Games by Sales
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                             Title
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                             Console
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                             Publisher
                           </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-300">
                             Score
                           </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">
                             Sales
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                         {genreGames
                           .sort((a, b) => b.totalSales - a.totalSales)
                           .slice(0, 10)
@@ -905,16 +922,16 @@ const GenreAnalysis = () => {
                               key={index}
                               className="hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {game.title}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-300">
                                 {game.console}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-300">
                                 {game.publisher}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                              <td className="px-6 py-4 text-sm text-center whitespace-nowrap">
                                 {game.criticScore ? (
                                   <span
                                     className={`px-2 py-1 rounded font-semibold 
@@ -932,7 +949,7 @@ const GenreAnalysis = () => {
                                   <span className="text-gray-400">-</span>
                                 )}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-indigo-600 dark:text-indigo-400 font-semibold">
+                              <td className="px-6 py-4 text-sm font-semibold text-right text-indigo-600 whitespace-nowrap dark:text-indigo-400">
                                 {game.totalSales.toFixed(2)}M
                               </td>
                             </tr>
