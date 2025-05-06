@@ -506,4 +506,60 @@ public class DatabaseService
             GROUP BY YEAR(release_date)
             ORDER BY YEAR(release_date)");
     }
+
+    public async Task<IEnumerable<object>> GetConsoleSalesEfficiencyDataAsync()
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        return await connection.QueryAsync(
+            @"SELECT 
+                console as platform,
+                SUM(total_sales) as globalSales,
+                SUM(na_sales) as naSales,
+                SUM(pal_sales) as palSales,
+                SUM(jp_sales) as jpSales,
+                SUM(other_sales) as otherSales,
+                COUNT(*) as gameCount,
+                ROUND(SUM(total_sales) / COUNT(*), 2) as salesPerGame
+            FROM vgchartz_2024
+            GROUP BY console
+            ORDER BY salesPerGame DESC");
+    }
+
+    public async Task<IEnumerable<object>> GetConsoleTopGenresAsync(string console)
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        return await connection.QueryAsync(
+            @"SELECT 
+                genre,
+                COUNT(*) as count,
+                SUM(total_sales) as sales
+            FROM vgchartz_2024
+            WHERE console = @Console
+            GROUP BY genre
+            ORDER BY count DESC
+            LIMIT 10", 
+            new { Console = console });
+    }
+
+    public async Task<IEnumerable<object>> GetConsoleGroupsDataAsync()
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        return await connection.QueryAsync(
+            @"SELECT 
+                CASE
+                    WHEN console IN ('NES', 'SNES', 'N64', 'GC', 'Wii', 'Wii U', 'Switch', 'GB', 'GBA', 'DS', '3DS', 'Virtual Boy') THEN 'Nintendo'
+                    WHEN console IN ('PS', 'PS2', 'PS3', 'PS4', 'PS5', 'PSP', 'PSV') THEN 'PlayStation'
+                    WHEN console IN ('XB', 'X360', 'XOne', 'XS') THEN 'Xbox'
+                    WHEN console IN ('GEN', 'SCD', '32X', 'SAT', 'DC', 'GG', 'PICO') THEN 'Sega'
+                    WHEN console = 'PC' THEN 'PC'
+                    WHEN console IN ('Mobile', 'iOS', 'Android') THEN 'Mobile'
+                    ELSE 'Other'
+                END as groupName,
+                console as platform,
+                SUM(total_sales) as globalSales,
+                COUNT(*) as gameCount
+            FROM vgchartz_2024
+            GROUP BY console
+            ORDER BY console");
+    }
 }

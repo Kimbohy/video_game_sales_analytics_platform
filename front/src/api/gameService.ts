@@ -79,6 +79,30 @@ export interface SalesPerGameData {
   salesPerGame: number;
 }
 
+export interface ConsoleEfficiencyData {
+  platform: string;
+  globalSales: number;
+  naSales: number;
+  palSales: number;
+  jpSales: number;
+  otherSales: number;
+  gameCount: number;
+  salesPerGame: number;
+}
+
+export interface ConsoleTopGenre {
+  genre: string;
+  count: number;
+  sales: number;
+}
+
+export interface ConsoleGroupData {
+  groupName: string;
+  platform: string;
+  globalSales: number;
+  gameCount: number;
+}
+
 export const gameService = {
   getStats: () =>
     axios.get<VGStatsData>(`${API_BASE_URL}/stats`).then((res) => res.data),
@@ -194,4 +218,19 @@ export const gameService = {
       .get<GameData[]>(`${API_BASE_URL}/games/filtered?${params.toString()}`)
       .then((res) => res.data);
   },
+
+  getConsoleSalesEfficiency: () =>
+    axios
+      .get<ConsoleEfficiencyData[]>(`${API_BASE_URL}/stats/console-efficiency`)
+      .then((res) => res.data),
+
+  getConsoleTopGenres: (console: string) =>
+    axios
+      .get<ConsoleTopGenre[]>(`${API_BASE_URL}/console/${console}/top-genres`)
+      .then((res) => res.data),
+
+  getConsoleGroups: () =>
+    axios
+      .get<ConsoleGroupData[]>(`${API_BASE_URL}/stats/console-groups`)
+      .then((res) => res.data),
 };

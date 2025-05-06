@@ -147,6 +147,28 @@ app.MapGet("/api/stats/sales-per-game", async (DatabaseService db) =>
 .WithName("GetSalesPerGameByYear")
 .WithOpenApi();
 
+// Add new endpoints for console analysis
+app.MapGet("/api/stats/console-efficiency", async (DatabaseService db) =>
+{
+    return await db.GetConsoleSalesEfficiencyDataAsync();
+})
+.WithName("GetConsoleSalesEfficiency")
+.WithOpenApi();
+
+app.MapGet("/api/console/{console}/top-genres", async (DatabaseService db, string console) =>
+{
+    return await db.GetConsoleTopGenresAsync(console);
+})
+.WithName("GetConsoleTopGenres")
+.WithOpenApi();
+
+app.MapGet("/api/stats/console-groups", async (DatabaseService db) =>
+{
+    return await db.GetConsoleGroupsDataAsync();
+})
+.WithName("GetConsoleGroups")
+.WithOpenApi();
+
 // Individual data endpoints
 app.MapGet("/api/console/{console}", async (DatabaseService db, string console) =>
 {

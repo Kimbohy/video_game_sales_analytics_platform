@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { gameService } from "../../api/gameService";
-import { SalesDistributionChart } from "../charts/SalesDistributionChart";
-import { GenreDistributionChart } from "../charts/GenreDistributionChart";
-import { TimelineChart } from "../charts/TimelineChart";
-import { GamesList } from "./GamesList";
-import { UserGuide } from "./UserGuide";
+import { gameService } from "../api/gameService";
+import { SalesDistributionChart } from "../components/charts/SalesDistributionChart";
+import { GenreDistributionChart } from "../components/charts/GenreDistributionChart";
+import { TimelineChart } from "../components/charts/TimelineChart";
+import { GamesList } from "../components/layout/GamesList";
+import { UserGuide } from "../components/layout/UserGuide";
 import { motion, AnimatePresence } from "framer-motion";
 
-export const Dashboard = () => {
+export const SalesAnalysis = () => {
   const [selectedConsole, setSelectedConsole] = useState<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);

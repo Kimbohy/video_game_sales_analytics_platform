@@ -1,6 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { gameService, PlatformSales } from "../api/gameService";
+import {
+  gameService,
+  PlatformSales,
+  ConsoleEfficiencyData,
+  ConsoleTopGenre,
+  ConsoleGroupData,
+} from "../api/gameService";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -17,6 +23,7 @@ import {
   ScatterChart,
   Scatter,
   ZAxis,
+  ReferenceArea,
 } from "recharts";
 
 const ConsoleAnalysis = () => {
@@ -25,6 +32,7 @@ const ConsoleAnalysis = () => {
     { name: string; consoles: string[] }[]
   >([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const platformDetailsRef = useRef<HTMLDivElement>(null);
 
   // Fetch all console data
   const { data: platformData, isLoading: isLoadingPlatforms } = useQuery({
@@ -39,119 +47,70 @@ const ConsoleAnalysis = () => {
     enabled: !!selectedConsole,
   });
 
-  // Define console manufacturers/generations for grouping
+  // Fetch console top genres data using SQL
+  const { data: consoleTopGenres, isLoading: isLoadingConsoleGenres } =
+    useQuery({
+      queryKey: ["consoleTopGenres", selectedConsole],
+      queryFn: () => gameService.getConsoleTopGenres(selectedConsole!),
+      enabled: !!selectedConsole,
+    });
+
+  // Fetch console groups data from SQL
+  const { data: consoleGroupsData, isLoading: isLoadingConsoleGroups } =
+    useQuery({
+      queryKey: ["consoleGroups"],
+      queryFn: () => gameService.getConsoleGroups(),
+    });
+
+  // Fetch sales efficiency data from SQL
+  const { data: salesEfficiencyData, isLoading: isLoadingSalesEfficiency } =
+    useQuery({
+      queryKey: ["consoleEfficiency"],
+      queryFn: () => gameService.getConsoleSalesEfficiency(),
+    });
+
+  // Create console family groups from backend data
   useEffect(() => {
-    if (platformData) {
-      // Create console family groups
-      const groups = [
-        {
-          name: "Nintendo",
-          consoles: platformData
-            .filter((p) =>
-              [
-                "NES",
-                "SNES",
-                "N64",
-                "GC",
-                "Wii",
-                "Wii U",
-                "Switch",
-                "GB",
-                "GBA",
-                "DS",
-                "3DS",
-                "Virtual Boy",
-              ].includes(p.platform)
-            )
-            .map((p) => p.platform),
-        },
-        {
-          name: "PlayStation",
-          consoles: platformData
-            .filter((p) =>
-              ["PS", "PS2", "PS3", "PS4", "PS5", "PSP", "PSV"].includes(
-                p.platform
-              )
-            )
-            .map((p) => p.platform),
-        },
-        {
-          name: "Xbox",
-          consoles: platformData
-            .filter((p) => ["XB", "X360", "XOne", "XS"].includes(p.platform))
-            .map((p) => p.platform),
-        },
-        {
-          name: "Sega",
-          consoles: platformData
-            .filter((p) =>
-              ["GEN", "SCD", "32X", "SAT", "DC", "GG", "PICO"].includes(
-                p.platform
-              )
-            )
-            .map((p) => p.platform),
-        },
-        {
-          name: "PC",
-          consoles: platformData
-            .filter((p) => ["PC"].includes(p.platform))
-            .map((p) => p.platform),
-        },
-        {
-          name: "Mobile",
-          consoles: platformData
-            .filter((p) => ["Mobile", "iOS", "Android"].includes(p.platform))
-            .map((p) => p.platform),
-        },
-        {
-          name: "Other",
-          consoles: platformData
-            .filter(
-              (p) =>
-                ![
-                  "NES",
-                  "SNES",
-                  "N64",
-                  "GC",
-                  "Wii",
-                  "Wii U",
-                  "Switch",
-                  "GB",
-                  "GBA",
-                  "DS",
-                  "3DS",
-                  "Virtual Boy",
-                  "PS",
-                  "PS2",
-                  "PS3",
-                  "PS4",
-                  "PS5",
-                  "PSP",
-                  "PSV",
-                  "XB",
-                  "X360",
-                  "XOne",
-                  "XS",
-                  "GEN",
-                  "SCD",
-                  "32X",
-                  "SAT",
-                  "DC",
-                  "GG",
-                  "PICO",
-                  "PC",
-                  "Mobile",
-                  "iOS",
-                  "Android",
-                ].includes(p.platform)
-            )
-            .map((p) => p.platform),
-        },
-      ].filter((g) => g.consoles.length > 0); // Remove empty groups
+    if (consoleGroupsData) {
+      const groupMap = new Map<string, string[]>();
+
+      consoleGroupsData.forEach((item) => {
+        if (!groupMap.has(item.groupName)) {
+          groupMap.set(item.groupName, []);
+        }
+        groupMap.get(item.groupName)!.push(item.platform);
+      });
+
+      // Convert map to array of groups
+      const groups = Array.from(groupMap.entries()).map(([name, consoles]) => ({
+        name,
+        consoles,
+      }));
 
       setConsoleGroups(groups);
     }
-  }, [platformData]);
+  }, [consoleGroupsData]);
+
+  // Effect to scroll to platform details when selectedConsole changes
+  useEffect(() => {
+    if (selectedConsole && platformDetailsRef.current) {
+      // Add small delay to ensure the component has rendered
+      setTimeout(() => {
+        // Calculate position with offset to account for the navbar height
+        const yOffset = -80; // Adjust this value based on your navbar height
+        const element = platformDetailsRef.current;
+        if (element) {
+          const y =
+            element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+          window.scrollTo({
+            top: y,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
+    }
+  }, [selectedConsole]);
 
   // Filter platform data by selected group
   const filteredPlatformData = platformData
@@ -196,41 +155,6 @@ const ConsoleAnalysis = () => {
     ];
   };
 
-  // Get top genres for selected console
-  const getTopGenres = () => {
-    if (!consoleGames) return [];
-
-    const genreCounts: { [key: string]: { count: number; sales: number } } = {};
-
-    consoleGames.forEach((game) => {
-      if (!genreCounts[game.genre]) {
-        genreCounts[game.genre] = { count: 0, sales: 0 };
-      }
-      genreCounts[game.genre].count++;
-      genreCounts[game.genre].sales += game.totalSales;
-    });
-
-    return Object.entries(genreCounts)
-      .map(([genre, data]) => ({
-        genre,
-        count: data.count,
-        sales: data.sales,
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  };
-
-  // Sales efficiency (sales per game) data
-  const salesEfficiencyData = filteredPlatformData
-    .map((platform) => ({
-      name: platform.platform,
-      salesPerGame:
-        platform.gameCount > 0 ? platform.globalSales / platform.gameCount : 0,
-      gameCount: platform.gameCount,
-      totalSales: platform.globalSales,
-    }))
-    .sort((a, b) => b.salesPerGame - a.salesPerGame);
-
   // Format number with commas for thousands
   const formatNumber = (num: number) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -242,14 +166,14 @@ const ConsoleAnalysis = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
           Console Sales Analysis
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
@@ -259,8 +183,8 @@ const ConsoleAnalysis = () => {
       </motion.div>
 
       {/* Console Group Filter */}
-      <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Filter by Console Family
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -293,26 +217,27 @@ const ConsoleAnalysis = () => {
       {/* Selected Console Detail */}
       {selectedConsole && selectedConsoleData && (
         <motion.div
+          ref={platformDetailsRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+          className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
         >
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {selectedConsole} - Platform Details
             </h2>
             <button
               onClick={() => setSelectedConsole(null)}
-              className="px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+              className="px-2 py-1 text-sm text-gray-600 rounded-md dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Clear Selection
             </button>
           </div>
 
           {/* Console Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Total Games
               </div>
@@ -320,7 +245,7 @@ const ConsoleAnalysis = () => {
                 {formatNumber(selectedConsoleData.gameCount)}
               </div>
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Global Sales
               </div>
@@ -328,19 +253,22 @@ const ConsoleAnalysis = () => {
                 {selectedConsoleData.globalSales.toFixed(2)}M
               </div>
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Sales per Game
               </div>
               <div className="text-xl font-bold text-gray-900 dark:text-white">
-                {(
-                  selectedConsoleData.globalSales /
-                  selectedConsoleData.gameCount
-                ).toFixed(2)}
+                {salesEfficiencyData
+                  ?.find((item) => item.platform === selectedConsole)
+                  ?.salesPerGame.toFixed(2) ||
+                  (
+                    selectedConsoleData.globalSales /
+                    selectedConsoleData.gameCount
+                  ).toFixed(2)}
                 M
               </div>
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Market Share
               </div>
@@ -353,15 +281,15 @@ const ConsoleAnalysis = () => {
             </div>
           </div>
 
-          {isLoadingConsoleGames ? (
+          {isLoadingConsoleGames || isLoadingConsoleGenres ? (
             <div className="flex justify-center py-8">
-              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Regional Sales Distribution */}
               <div>
-                <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">
+                <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
                   Regional Sales Distribution
                 </h3>
                 <div className="h-64">
@@ -398,13 +326,13 @@ const ConsoleAnalysis = () => {
 
               {/* Top Genres on this Console */}
               <div>
-                <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">
+                <h3 className="mb-3 font-semibold text-gray-800 text-md dark:text-white">
                   Top Genres
                 </h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={getTopGenres().slice(0, 5)}
+                      data={consoleTopGenres?.slice(0, 5)}
                       layout="vertical"
                       margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                     >
@@ -430,20 +358,20 @@ const ConsoleAnalysis = () => {
       )}
 
       {/* Console Sales Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
         {/* Total Sales by Console */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+          className="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800"
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
             Total Sales by Platform
           </h2>
           {isLoadingPlatforms ? (
             <div className="flex justify-center py-8">
-              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
           ) : (
             <div className="h-96">
@@ -479,7 +407,7 @@ const ConsoleAnalysis = () => {
               </ResponsiveContainer>
             </div>
           )}
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Click on any bar to see platform details
           </p>
         </motion.div>
@@ -489,14 +417,14 @@ const ConsoleAnalysis = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+          className="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800"
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
             Market Share by Platform
           </h2>
           {isLoadingPlatforms ? (
             <div className="flex justify-center py-8">
-              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
           ) : (
             <div className="h-96">
@@ -540,31 +468,34 @@ const ConsoleAnalysis = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+        className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
       >
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Platform Efficiency (Sales per Game)
         </h2>
-        {isLoadingPlatforms ? (
+
+        {isLoadingPlatforms || isLoadingSalesEfficiency ? (
           <div className="flex justify-center py-8">
-            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
           </div>
         ) : (
-          <div className="h-80">
+          <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                margin={{ top: 40, right: 20, bottom: 40, left: 60 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                 <XAxis
                   type="number"
                   dataKey="gameCount"
                   name="Game Count"
                   label={{
-                    value: "Number of Games",
-                    position: "insideBottomRight",
-                    offset: -5,
+                    value: "Game Library Size",
+                    position: "insideBottom",
+                    offset: -10,
                   }}
+                  domain={["auto", "auto"]}
+                  tickFormatter={(val) => formatNumber(val)}
                 />
                 <YAxis
                   type="number"
@@ -574,19 +505,23 @@ const ConsoleAnalysis = () => {
                     value: "Sales per Game (M)",
                     angle: -90,
                     position: "insideLeft",
+                    offset: -45,
                   }}
+                  tickFormatter={(val) => val.toFixed(1)}
                 />
                 <ZAxis
                   type="number"
-                  dataKey="totalSales"
-                  range={[60, 600]}
+                  dataKey="globalSales"
+                  range={[60, 700]}
                   name="Total Sales"
                 />
                 <Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
-                  formatter={(value, name, props) => {
+                  formatter={(value, name) => {
                     if (name === "Sales per Game")
                       return [`${Number(value).toFixed(2)}M`, name];
+                    if (name === "Game Count")
+                      return [formatNumber(Number(value)), name];
                     if (name === "Total Sales")
                       return [`${Number(value).toFixed(2)}M`, name];
                     return [value, name];
@@ -595,32 +530,115 @@ const ConsoleAnalysis = () => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-white dark:bg-gray-800 p-2 border border-gray-200 dark:border-gray-700 shadow-md rounded-md">
-                          <p className="font-semibold">{data.name}</p>
-                          <p>Games: {formatNumber(data.gameCount)}</p>
-                          <p>Sales/Game: {data.salesPerGame.toFixed(2)}M</p>
-                          <p>Total Sales: {data.totalSales.toFixed(2)}M</p>
+                        <div className="p-3 bg-white border border-gray-200 rounded-md shadow-md dark:bg-gray-800 dark:border-gray-700">
+                          <p className="mb-1 text-base font-bold">
+                            {data.platform}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Games:
+                            </p>
+                            <p className="text-sm font-medium text-right">
+                              {formatNumber(data.gameCount)}
+                            </p>
+
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Sales/Game:
+                            </p>
+                            <p className="text-sm font-medium text-right text-indigo-600 dark:text-indigo-400">
+                              {data.salesPerGame.toFixed(2)}M
+                            </p>
+
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Total Sales:
+                            </p>
+                            <p className="text-sm font-medium text-right">
+                              {data.globalSales.toFixed(2)}M
+                            </p>
+                          </div>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Legend />
+                <Legend
+                  payload={[
+                    { value: "Nintendo", type: "circle", color: "#0088FE" },
+                    { value: "PlayStation", type: "circle", color: "#FF8042" },
+                    { value: "Xbox", type: "circle", color: "#00C49F" },
+                    { value: "Sega", type: "circle", color: "#8884d8" },
+                    { value: "PC", type: "circle", color: "#FFBB28" },
+                    { value: "Other", type: "circle", color: "#AAAAAA" },
+                  ]}
+                  verticalAlign="top"
+                  height={36}
+                  layout="horizontal"
+                  wrapperStyle={{ paddingTop: 0, paddingBottom: 10 }}
+                />
                 <Scatter
                   name="Platforms"
                   data={salesEfficiencyData}
                   fill="#8884d8"
-                  onClick={(data) => setSelectedConsole(data.name)}
-                />
+                  fillOpacity={0.8}
+                  onClick={(data) => setSelectedConsole(data.platform)}
+                >
+                  {salesEfficiencyData?.map((entry, index) => {
+                    // Assign colors based on console families
+                    let color = "#8884d8"; // Default color
+
+                    // Nintendo consoles - blue
+                    if (
+                      [
+                        "NES",
+                        "SNES",
+                        "N64",
+                        "GC",
+                        "Wii",
+                        "Wii U",
+                        "Switch",
+                        "GB",
+                        "GBA",
+                        "DS",
+                        "3DS",
+                      ].includes(entry.platform)
+                    ) {
+                      color = "#0088FE"; // Blue
+                    }
+                    // PlayStation consoles - red
+                    else if (
+                      ["PS", "PS2", "PS3", "PS4", "PS5", "PSP", "PSV"].includes(
+                        entry.platform
+                      )
+                    ) {
+                      color = "#FF8042"; // Orange/red
+                    }
+                    // Xbox consoles - green
+                    else if (
+                      ["XB", "X360", "XOne", "XS"].includes(entry.platform)
+                    ) {
+                      color = "#00C49F"; // Green
+                    }
+                    // Sega consoles - purple
+                    else if (
+                      ["GEN", "SCD", "32X", "SAT", "DC", "GG", "PICO"].includes(
+                        entry.platform
+                      )
+                    ) {
+                      color = "#8884d8"; // Purple
+                    }
+                    // Other platforms
+                    else if (entry.platform === "PC") {
+                      color = "#FFBB28"; // Yellow
+                    }
+
+                    return <Cell key={`cell-${index}`} fill={color} />;
+                  })}
+                </Scatter>
               </ScatterChart>
             </ResponsiveContainer>
           </div>
         )}
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Bubble size represents total sales volume. Click on any bubble for
-          details.
-        </p>
       </motion.div>
 
       {/* Top Consoles by Efficiency */}
@@ -628,9 +646,9 @@ const ConsoleAnalysis = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+        className="p-4 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800"
       >
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Top Platforms by Sales Efficiency
         </h2>
         <div className="overflow-x-auto">
@@ -639,57 +657,57 @@ const ConsoleAnalysis = () => {
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300"
                 >
                   Rank
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300"
                 >
                   Platform
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300"
                 >
                   Sales per Game
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300"
                 >
                   Game Count
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300"
                 >
                   Total Sales
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {salesEfficiencyData.slice(0, 10).map((item, index) => (
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+              {salesEfficiencyData?.slice(0, 10).map((item, index) => (
                 <tr
-                  key={item.name}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                  onClick={() => setSelectedConsole(item.name)}
+                  key={item.platform}
+                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                  onClick={() => setSelectedConsole(item.platform)}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
                     {index + 1}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {item.name}
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {item.platform}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 text-sm text-right text-gray-900 whitespace-nowrap dark:text-white">
                     {item.salesPerGame.toFixed(2)}M
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                  <td className="px-6 py-4 text-sm text-right text-gray-500 whitespace-nowrap dark:text-gray-400">
                     {formatNumber(item.gameCount)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-indigo-600 dark:text-indigo-400">
-                    {item.totalSales.toFixed(2)}M
+                  <td className="px-6 py-4 text-sm text-right text-indigo-600 whitespace-nowrap dark:text-indigo-400">
+                    {item.globalSales.toFixed(2)}M
                   </td>
                 </tr>
               ))}
